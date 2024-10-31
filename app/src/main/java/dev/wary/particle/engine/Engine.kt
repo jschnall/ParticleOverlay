@@ -2,9 +2,6 @@ package dev.wary.particle.engine
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Rect
-import java.util.logging.Logger
-import kotlin.math.abs
 
 enum class OverflowPolicy {
     DO_NOT_CREATE,
@@ -23,7 +20,7 @@ class ParticleEngine(
     val maxCapacity: Int = 10_000,
     val overflowPolicy: OverflowPolicy = OverflowPolicy.DO_NOT_CREATE
 ) {
-    val bounds = Rect(0, 0, 0, 0)
+    val bounds = Rect(0.0, 0.0, 0.0, 0.0)
     val entities = mutableListOf<Entity>()
     var startIndex = 0
     var lastUpdateTime = 0L
@@ -33,19 +30,20 @@ class ParticleEngine(
     }
 
     fun onSizeChanged(width: Int, height: Int) {
-        bounds.right = width
-        bounds.bottom = height
+        bounds.right = width.toDouble()
+        bounds.bottom = height.toDouble()
     }
 
-    fun draw(canvas: Canvas, context: Context) {
+    fun onDraw(canvas: Canvas, context: Context) {
         for (entity in entities) {
             if (entity is Particle) {
                 renderer.drawParticle(entity, canvas, context)
             }
         }
+        if (DEBUG) renderer.drawDebugInfo(canvas, this)
     }
 
-    fun update(currentTime: Long) {
+    fun onUpdate(currentTime: Long) {
         val elapsedTime = if (lastUpdateTime == 0L) 1 else currentTime - lastUpdateTime
         lastUpdateTime = currentTime
 
@@ -83,21 +81,21 @@ class ParticleEngine(
     }
 
     private fun updateParticle(particle: Particle, elapsedTime: Long) {
-        val vxFrame = (particle.velocity.x / elapsedTime).toInt()
-        val vyFrame = (particle.velocity.y / elapsedTime).toInt()
+        val vxFrame = particle.velocity.x * elapsedTime
+        val vyFrame = particle.velocity.y * elapsedTime
 
         handleCollisions(particle, vxFrame, vyFrame)
 
         particle.lifeSpan -= elapsedTime
-        particle.velocity.x += (particle.acceleration.x / elapsedTime).toInt()
-        particle.velocity.y += (particle.acceleration.y / elapsedTime).toInt()
+        particle.velocity.x += particle.acceleration.x * elapsedTime
+        particle.velocity.y += particle.acceleration.y * elapsedTime
 
         particle.alpha?.let {
-            particle.alpha = (it + (particle.alphaChange / elapsedTime)).toInt().coerceIn(0, 255)
+            particle.alpha = (it + (particle.alphaChange * elapsedTime)).coerceIn(0.0, 255.0)
         }
     }
 
-    private fun handleCollisions(particle: Particle, vxFrame: Int, vyFrame: Int) {
+    private fun handleCollisions(particle: Particle, vxFrame: Double, vyFrame: Double) {
         var collision = false
         if (edgeCollisions && collidesWithEdge(particle, vxFrame, vyFrame)) {
             collision = true
@@ -115,7 +113,7 @@ class ParticleEngine(
         }
     }
 
-    private fun collidesWithEdge(particle: Particle, vxFrame: Int, vyFrame: Int): Boolean {
+    private fun collidesWithEdge(particle: Particle, vxFrame: Double, vyFrame: Double): Boolean {
         val newX = particle.position.x + vxFrame
         val newY = particle.position.y + vyFrame
 
@@ -151,5 +149,9 @@ class ParticleEngine(
         }
 
         return result
+    }
+
+    companion object {
+        const val DEBUG = true
     }
 }

@@ -15,8 +15,12 @@ import dev.wary.particle.engine.ParticleEmitter
 import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.ParticleParams
 import dev.wary.particle.engine.Point
-import dev.wary.particle.engine.PointEmitter
+import dev.wary.particle.engine.DoubleRangeParam
+import dev.wary.particle.engine.ExactParam
+import dev.wary.particle.engine.ListParam
+import dev.wary.particle.engine.LongRangeParam
 import dev.wary.particle.engine.RangedParticleBuilder
+import dev.wary.particle.engine.listParamOf
 
 @Composable
 fun ParticleEmitterScreen(modifier: Modifier = Modifier) {
@@ -34,25 +38,25 @@ fun ParticleEmitterScreen(modifier: Modifier = Modifier) {
 fun buildParticleEmitter(): ParticleEngine {
     val builder = RangedParticleBuilder(
         ParticleParams(
-            lifeSpan = LongRange(1000, 10_000),
-            width = IntRange(8, 32),
-            height = IntRange(8, 32),
-            vx = IntRange(-40, 40),
-            vy = IntRange(-40, -20),
-            ax = IntRange(0, 0),
-            ay = IntRange(0, 0),
-            colors = listOf(
+            lifeSpan = LongRangeParam(1000, 5000),
+            width = DoubleRangeParam(8.0, 32.0),
+            height = DoubleRangeParam(8.0, 32.0),
+            vx = DoubleRangeParam(-0.02, 0.02),
+            vy = DoubleRangeParam(-0.1, -0.04),
+            ax = ExactParam(0.0),
+            ay = ExactParam(0.0),
+            colors = listParamOf(
                 Color.RED, Color.YELLOW
             ),
-            alpha = IntRange(255, 255),
-            alphaChange = IntRange(-20, -20)
+            alpha = ExactParam(255.0),
+            alphaChange = DoubleRangeParam(-0.002, -0.001)
         )
     )
 
-    val x = 500
-    val y = 500
-    val w = 52
-    val h = 473
+    val x = 500.0
+    val y = 500.0
+    val w = 52.0
+    val h = 473.0
 
     val entities = mutableListOf<Entity>().apply {
         add(
@@ -63,7 +67,7 @@ fun buildParticleEmitter(): ParticleEngine {
                 width = w,
                 height = h,
                 position = Point(x, y),
-                velocity = Point(0, 0),
+                velocity = Point(0.0, 0.0),
                 drawableResId = R.drawable.match
             )
         )

@@ -14,7 +14,11 @@ import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.ParticleParams
 import dev.wary.particle.engine.Point
 import dev.wary.particle.engine.PointEmitter
+import dev.wary.particle.engine.DoubleRangeParam
+import dev.wary.particle.engine.ExactParam
+import dev.wary.particle.engine.LongRangeParam
 import dev.wary.particle.engine.RangedParticleBuilder
+import dev.wary.particle.engine.listParamOf
 
 @Composable
 fun PointEmitterScreen(modifier: Modifier = Modifier) {
@@ -32,20 +36,20 @@ fun PointEmitterScreen(modifier: Modifier = Modifier) {
 fun buildPointEmitter(): ParticleEngine {
     val builder = RangedParticleBuilder(
         ParticleParams(
-            lifeSpan = LongRange(1000, 5000),
-            width = IntRange(4, 16),
-            height = IntRange(4, 16),
-            vx = IntRange(-4, 4),
-            vy = IntRange(-4, 4),
-            ax = IntRange(0, 0),
-            ay = IntRange(0, 0),
-            colors = listOf(
+            lifeSpan = LongRangeParam(1000, 5000),
+            width = DoubleRangeParam(4.0, 16.0),
+            height = DoubleRangeParam(8.0, 16.0),
+            vx = DoubleRangeParam(-0.4, 0.4),
+            vy = DoubleRangeParam(-0.4, 0.4),
+            ax = ExactParam(0.0),
+            ay = ExactParam(0.0),
+            colors = listParamOf(
                 Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA
             )
         )
     )
     val entities = mutableListOf<Entity>().apply {
-        add(PointEmitter(Point(200, 200), builder))
+        add(PointEmitter(Point(200.0, 200.0), builder))
     }
 
     return ParticleEngine(entities)
