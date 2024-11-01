@@ -1,12 +1,12 @@
 package dev.wary.particle.engine
 
 import android.content.Context
-import android.graphics.BlendMode
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import androidx.appcompat.content.res.AppCompatResources
+import java.util.logging.Logger
 
 
 class ParticleRenderer {
@@ -14,7 +14,6 @@ class ParticleRenderer {
     private val bounds = Rect(0,0,0,0)
 
     fun drawDebugInfo(canvas: Canvas, engine: ParticleEngine) {
-        paint.alpha = 255
         paint.color = Color.WHITE
         canvas.drawRect(0f, 0f, 400f, 120f, paint)
         paint.color = Color.BLACK
@@ -22,6 +21,7 @@ class ParticleRenderer {
         canvas.drawText("Entities: ${engine.entities.size }", 80f, 80f, paint)
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     fun drawParticle(particle: Particle, canvas: Canvas, context: Context) {
         bounds.left = particle.position.x.toInt()
         bounds.right = (particle.position.x + particle.width).toInt()
@@ -29,10 +29,15 @@ class ParticleRenderer {
         bounds.bottom = (particle.position.y + particle.height).toInt()
 
         // Draw background
-        paint.color = particle.color
-        particle.alpha?.let {
-            paint.alpha = it.toInt()
-        }
+        paint.setARGB(
+            particle.color.alpha.toInt(),
+            particle.color.red.toInt(),
+            particle.color.green.toInt(),
+            particle.color.blue.toInt()
+        )
+
+        Logger.getLogger("FOO").info(particle.color.alpha.toInt().toHexString())
+        Logger.getLogger("FOO").info(paint.color.toHexString())
         canvas.drawRect(bounds, paint)
 
         // Draw image

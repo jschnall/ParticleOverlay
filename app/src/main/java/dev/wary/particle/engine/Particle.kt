@@ -1,6 +1,5 @@
 package dev.wary.particle.engine
 
-import android.graphics.Color
 import java.util.logging.Logger
 import kotlin.random.Random
 
@@ -23,6 +22,47 @@ data class CollisionBehavior(
 // TODO replace Entity with Rect?
 open class Entity(val position: Point, var width: Double, var height: Double)
 
+class DoubleColor(var alpha: Double = 0.0, var red: Double = 0.0, var green: Double = 0.0, var blue: Double = 0.0) {
+    constructor(color: Int): this(
+        alpha = ((color shr 24) and 0xff).toDouble(),
+        red = ((color shr 16) and 0xff).toDouble(),
+        green = ((color shr 8) and 0xff).toDouble(),
+        blue = (color and 0xff).toDouble()
+    )
+
+    // Warning: Do not use with paint.setColor()
+    fun toInt(): Int =
+        (alpha.toInt() and 0xff) shl 24 or
+        (red.toInt() and 0xff) shl 16 or
+        (green.toInt() and 0xff) shl 8 or
+        (blue.toInt() and 0xff)
+
+    operator fun times(l: Long): DoubleColor {
+        return DoubleColor(
+            alpha = (alpha * l),
+            red = (red * l),
+            green = (green * l),
+            blue = (blue * l)
+        )
+    }
+
+    operator fun plus(other: DoubleColor): DoubleColor {
+        return DoubleColor(
+            alpha = (alpha + other.alpha).coerceIn(0.0, 255.0),
+            red = (red + other.red).coerceIn(0.0, 255.0),
+            green = (green + other.green).coerceIn(0.0, 255.0),
+            blue = (blue + other.blue).coerceIn(0.0, 255.0)
+        )
+    }
+
+
+    companion object{
+        fun fromInt(color: Int) = DoubleColor(color)
+    }
+}
+
+fun Int.toDoubleColor() = DoubleColor.fromInt(this)
+
 open class Particle(
     position: Point,
     width: Double,
@@ -31,11 +71,9 @@ open class Particle(
     val velocity: Point = Point(0.0, 0.0),
     val acceleration: Point = Point(0.0, 0.0),
     // val sizeDelta: Point,
-    var alpha: Double? = null,
-    val alphaChange: Double = 0.0,
     var drawableResId: Int? = null,
-    var color: Int = Color.TRANSPARENT,
-    // var colorDelta: Int,
+    var color: DoubleColor = DoubleColor(),
+    val colorChange: DoubleColor = DoubleColor(),
     val collisionBehavior: CollisionBehavior = CollisionBehavior()
 ): Entity (position = position, width = width, height = height)
 
@@ -72,6 +110,16 @@ class DoubleRangeParam(from: Double, toExclusive: Double): RangeParam<Double>(fr
         get() = Random.nextDouble(from, toExclusive)
 }
 
+class ColorRangeParam(
+    fromDoubleColor: DoubleColor,
+    toDoubleColorExclusive: DoubleColor
+) {
+    constructor(from: Int, to: Int): this(
+        fromDoubleColor = DoubleColor.fromInt(from),
+        toDoubleColorExclusive = DoubleColor.fromInt(to)
+    )
+}
+
 // Used to Initialize new particles
 data class ParticleParams(
     val lifeSpan: Param<Long>, // Lifespan of particle in millis
@@ -82,7 +130,6 @@ data class ParticleParams(
     val ax: Param<Double>,
     val ay: Param<Double>,
     val drawableResIds: ListParam<Int>? = null,
-    val colors: Param<Int> = ListParam(listOf(Color.TRANSPARENT)),
-    val alpha: Param<Double>? = null,
-    val alphaChange: Param<Double> = ExactParam(0.0)
+    val color: Param<DoubleColor> = ExactParam(DoubleColor()),
+    val colorChange: Param<DoubleColor> = ExactParam(DoubleColor()),
 )

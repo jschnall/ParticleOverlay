@@ -90,9 +90,7 @@ class ParticleEngine(
         particle.velocity.x += particle.acceleration.x * elapsedTime
         particle.velocity.y += particle.acceleration.y * elapsedTime
 
-        particle.alpha?.let {
-            particle.alpha = (it + (particle.alphaChange * elapsedTime)).coerceIn(0.0, 255.0)
-        }
+        particle.color += particle.colorChange * elapsedTime
     }
 
     private fun handleCollisions(particle: Particle, vxFrame: Double, vyFrame: Double) {

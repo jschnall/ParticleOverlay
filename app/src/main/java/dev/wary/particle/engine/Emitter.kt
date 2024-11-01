@@ -1,6 +1,5 @@
 package dev.wary.particle.engine
 
-import android.graphics.Color
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -27,8 +26,7 @@ class TemplateParticleBuilder(val template: Particle): ParticleBuilder {
             acceleration = template.acceleration.copy(),
             drawableResId = template.drawableResId,
             color = template.color,
-            alpha = template.alpha,
-            alphaChange = template.alphaChange
+            colorChange = template.colorChange
     )
 }
 
@@ -42,9 +40,8 @@ class RangedParticleBuilder(val params: ParticleParams): ParticleBuilder {
             velocity = Point(params.vx.value, params.vy.value),
             acceleration = Point(params.ax.value, params.ay.value),
             drawableResId = params.drawableResIds?.value,
-            color = params.colors.value,
-            alpha = params.alpha?.let { params.alpha.value },
-            alphaChange = params.alphaChange.value
+            color = params.color.value,
+            colorChange = params.colorChange.value
         )
     }
 }
@@ -99,7 +96,8 @@ class ParticleEmitter(
     velocity: Point = Point(0.0, 0.0),
     acceleration: Point = Point(0.0, 0.0),
     drawableResId: Int? = null,
-    color: Int = Color.TRANSPARENT
+    color: DoubleColor = android.graphics.Color.TRANSPARENT.toDoubleColor(),
+    colorChange: DoubleColor = DoubleColor()
 ): Particle(
     lifeSpan = lifeSpan,
     width = width,
@@ -108,7 +106,8 @@ class ParticleEmitter(
     velocity = velocity,
     acceleration = acceleration,
     drawableResId = drawableResId,
-    color = color
+    color = color,
+    colorChange = colorChange
 ), Emitter, Source {
     override fun emit() = builder.build(this)
     override fun startPosition() = source?.startPosition() ?: position

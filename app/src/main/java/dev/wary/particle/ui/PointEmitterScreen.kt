@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import dev.wary.particle.engine.DoubleColor
 import dev.wary.particle.engine.Entity
 import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.ParticleParams
@@ -19,6 +20,7 @@ import dev.wary.particle.engine.ExactParam
 import dev.wary.particle.engine.LongRangeParam
 import dev.wary.particle.engine.RangedParticleBuilder
 import dev.wary.particle.engine.listParamOf
+import dev.wary.particle.engine.toDoubleColor
 
 @Composable
 fun PointEmitterScreen(modifier: Modifier = Modifier) {
@@ -43,9 +45,14 @@ fun buildPointEmitter(): ParticleEngine {
             vy = DoubleRangeParam(-0.4, 0.4),
             ax = ExactParam(0.0),
             ay = ExactParam(0.0),
-            colors = listParamOf(
-                Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA
-            )
+            color = listParamOf(
+                Color.RED.toDoubleColor(),
+                Color.GREEN.toDoubleColor(),
+                Color.BLUE.toDoubleColor(),
+                Color.YELLOW.toDoubleColor(),
+                Color.MAGENTA.toDoubleColor()
+            ),
+            colorChange = ExactParam(DoubleColor(0.0, 0.0, 0.0, 0.0))
         )
     )
     val entities = mutableListOf<Entity>().apply {
