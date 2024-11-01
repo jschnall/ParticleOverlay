@@ -36,15 +36,23 @@ class ParticleRenderer {
             particle.color.blue.toInt()
         )
 
-        Logger.getLogger("FOO").info(particle.color.alpha.toInt().toHexString())
-        Logger.getLogger("FOO").info(paint.color.toHexString())
+        //Logger.getLogger("FOO").info(paint.color.toHexString())
         canvas.drawRect(bounds, paint)
 
         // Draw image
         particle.drawableResId?.let { resId ->
             val drawable = AppCompatResources.getDrawable(context, resId)
-
             drawable?.let {
+                particle.tint?.let { tint ->
+                    it.setTint(
+                        Color.argb(
+                            tint.alpha.toInt(),
+                            tint.red.toInt(),
+                            tint.green.toInt(),
+                            tint.blue.toInt()
+                        )
+                    )
+                }
                 it.bounds = bounds
                 it.draw(canvas)
             }

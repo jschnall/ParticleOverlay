@@ -1,6 +1,7 @@
 package dev.wary.particle.ui
 
 import android.graphics.Color
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -8,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import dev.wary.particle.R
 import dev.wary.particle.engine.DoubleColor
 import dev.wary.particle.engine.Entity
@@ -28,10 +31,15 @@ fun ParticleEmitterScreen(modifier: Modifier = Modifier) {
     val engine = remember { mutableStateOf(buildParticleEmitter(), neverEqualPolicy()) }
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Greeting(
-            name = "Android",
-            modifier = Modifier.padding(innerPadding)
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Greeting(
+                name = "Particles",
+                modifier = modifier
+                    .padding(top = 100.dp)
+                    .align(Alignment.TopCenter)
+            )
+        }
+
         ParticleOverlay(modifier = Modifier.fillMaxSize(), engine)
     }
 }
@@ -63,12 +71,13 @@ fun buildParticleEmitter(): ParticleEngine {
             ParticleEmitter(
                 builder = builder,
                 lifeSpan = 30_000,
-                source = { Point(x + w / 2, y) },
+                source = { Point(x + w / 2 - 10, y + 40) },
                 width = w,
                 height = h,
                 position = Point(x, y),
                 velocity = Point(0.0, 0.0),
-                drawableResId = R.drawable.match
+                drawableResId = R.drawable.match,
+                emitRate = 0.2
             )
         )
     }

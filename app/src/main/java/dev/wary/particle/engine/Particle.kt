@@ -74,6 +74,8 @@ open class Particle(
     var drawableResId: Int? = null,
     var color: DoubleColor = DoubleColor(),
     val colorChange: DoubleColor = DoubleColor(),
+    var tint: DoubleColor? = null,
+    var tintChange: DoubleColor = DoubleColor(),
     val collisionBehavior: CollisionBehavior = CollisionBehavior()
 ): Entity (position = position, width = width, height = height)
 
@@ -132,4 +134,6 @@ data class ParticleParams(
     val drawableResIds: ListParam<Int>? = null,
     val color: Param<DoubleColor> = ExactParam(DoubleColor()),
     val colorChange: Param<DoubleColor> = ExactParam(DoubleColor()),
+    val tint: Param<DoubleColor> = ExactParam(DoubleColor()),
+    val tintChange: Param<DoubleColor> = ExactParam(DoubleColor()),
 )

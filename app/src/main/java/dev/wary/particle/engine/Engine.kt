@@ -60,7 +60,9 @@ class ParticleEngine(
             }
 
             if (entity is Emitter) {
-                newEntities.add(entity.emit())
+                repeat((entity.emitRate * elapsedTime).toInt()) {
+                    newEntities.add(entity.emit())
+                }
             }
         }
         entities.clear()
@@ -91,6 +93,11 @@ class ParticleEngine(
         particle.velocity.y += particle.acceleration.y * elapsedTime
 
         particle.color += particle.colorChange * elapsedTime
+
+        particle.tint?.let {
+            particle.tint = it + particle.tintChange * elapsedTime
+        }
+
     }
 
     private fun handleCollisions(particle: Particle, vxFrame: Double, vyFrame: Double) {
@@ -150,6 +157,6 @@ class ParticleEngine(
     }
 
     companion object {
-        const val DEBUG = true
+        const val DEBUG = false
     }
 }

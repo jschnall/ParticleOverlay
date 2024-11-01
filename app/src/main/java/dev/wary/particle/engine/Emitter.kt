@@ -8,7 +8,8 @@ fun interface ParticleBuilder {
     fun build(source: Source): Particle
 }
 
-fun interface Emitter {
+interface Emitter {
+    val emitRate: Double
     fun emit(): Particle
 }
 
@@ -26,7 +27,9 @@ class TemplateParticleBuilder(val template: Particle): ParticleBuilder {
             acceleration = template.acceleration.copy(),
             drawableResId = template.drawableResId,
             color = template.color,
-            colorChange = template.colorChange
+            colorChange = template.colorChange,
+            tint = template.tint,
+            tintChange = template.tintChange
     )
 }
 
@@ -41,7 +44,9 @@ class RangedParticleBuilder(val params: ParticleParams): ParticleBuilder {
             acceleration = Point(params.ax.value, params.ay.value),
             drawableResId = params.drawableResIds?.value,
             color = params.color.value,
-            colorChange = params.colorChange.value
+            colorChange = params.colorChange.value,
+            tint = params.tint.value,
+            tintChange = params.tintChange.value
         )
     }
 }
@@ -49,6 +54,7 @@ class RangedParticleBuilder(val params: ParticleParams): ParticleBuilder {
 class PointEmitter(
     position: Point,
     val builder: ParticleBuilder,
+    override val emitRate: Double,
 ): Entity(
     position = position,
     width = 1.0,
@@ -62,6 +68,7 @@ class LineEmitter(
     val start: Point,
     val end: Point,
     val builder: ParticleBuilder,
+    override val emitRate: Double,
 ): Entity(
     position = start,
     width = abs(end.x - start.x),
@@ -87,7 +94,7 @@ class LineEmitter(
 
 class ParticleEmitter(
     val builder: ParticleBuilder,
-    val emitRate: Int = 0,
+    override val emitRate: Double,
     val source: Source? = null,
     lifeSpan: Long,
     width: Double,
