@@ -33,7 +33,7 @@ fun ParticleEmitterScreen(modifier: Modifier = Modifier) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             Greeting(
-                name = "Particles",
+                name = "Fire",
                 modifier = modifier
                     .padding(top = 100.dp)
                     .align(Alignment.TopCenter)
