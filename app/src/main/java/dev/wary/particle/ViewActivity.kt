@@ -2,6 +2,8 @@ package dev.wary.particle
 
 import android.graphics.Color
 import android.os.Bundle
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,33 +27,39 @@ import dev.wary.particle.ui.theme.MyApplicationTheme
 import dev.wary.particle.ui.view.ParticleOverlayView
 
 class ViewActivity : ComponentActivity() {
-    lateinit var view: ParticleOverlayView
+    lateinit var particleView: ParticleOverlayView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         val emitter = buildLineEmitter()
+        particleView = ParticleOverlayView(this)
 
-        view = ParticleOverlayView(this)
-        view.setBackgroundColor(Color.BLACK)
-
-        view.engine = buildEngine(emitter)
-        view.addSizeChangeListener(
+        particleView.engine = buildEngine(emitter)
+        particleView.addSizeChangeListener(
             { w, h ->
                 emitter.end.x = w.toDouble()
             }
         )
-        setContentView(view)
+
+        val layout = FrameLayout(this)
+        val imageView = ImageView(this)
+        layout.setBackgroundColor(Color.BLACK)
+        imageView.setImageResource(R.drawable.umbrella)
+        layout.addView(imageView)
+        layout.addView(particleView)
+
+        setContentView(layout)
     }
 
     override fun onStart() {
         super.onStart()
-        view.start()
+        particleView.start()
     }
     override fun onStop() {
         super.onStop()
-        view.stop()
+        particleView.stop()
     }
 
     fun buildLineEmitter(): LineEmitter {

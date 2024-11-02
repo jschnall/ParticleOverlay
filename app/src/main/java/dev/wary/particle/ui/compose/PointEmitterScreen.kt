@@ -37,10 +37,11 @@ fun PointEmitterScreen(modifier: Modifier = Modifier) {
             emitter.position.y = size.height.toDouble() / 2
         }
     ) { innerPadding ->
+        ParticleOverlay(modifier = Modifier.fillMaxSize(), engine)
+
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             Greeting(name = "Particles", modifier = modifier.align(Alignment.Center))
         }
-        ParticleOverlay(modifier = Modifier.fillMaxSize(), engine)
     }
 }
 
@@ -49,7 +50,7 @@ fun buildEmitter(): PointEmitter {
         ParticleParams(
             lifeSpan = LongRangeParam(1000, 5000),
             width = ExactParam(4.0),
-            height = DoubleRangeParam(8.0, 32.0),
+            height = DoubleRangeParam(8.0, 64.0),
             vx = DoubleRangeParam(-0.4, 0.4),
             vy = DoubleRangeParam(-0.4, 0.4),
             ax = ExactParam(0.0),
