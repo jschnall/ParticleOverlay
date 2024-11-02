@@ -1,4 +1,4 @@
-package dev.wary.particle.ui
+package dev.wary.particle.ui.compose
 
 import android.graphics.Color
 import androidx.compose.foundation.layout.Box

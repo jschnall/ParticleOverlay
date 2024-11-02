@@ -1,4 +1,4 @@
-package dev.wary.particle.ui
+package dev.wary.particle.ui.compose
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

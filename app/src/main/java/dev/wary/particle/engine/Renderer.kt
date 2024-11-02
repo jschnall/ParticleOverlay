@@ -36,7 +36,6 @@ class ParticleRenderer {
             particle.color.blue.toInt()
         )
 
-        //Logger.getLogger("FOO").info(paint.color.toHexString())
         canvas.drawRect(bounds, paint)
 
         // Draw image

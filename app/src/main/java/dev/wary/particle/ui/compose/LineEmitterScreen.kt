@@ -1,10 +1,11 @@
-package dev.wary.particle.ui
+package dev.wary.particle.ui.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,9 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.wary.particle.R
 import dev.wary.particle.engine.DoubleColor
-import dev.wary.particle.engine.Emitter
 import dev.wary.particle.engine.Entity
-import dev.wary.particle.engine.ExactParam
 import dev.wary.particle.engine.LineEmitter
 import dev.wary.particle.engine.Particle
 import dev.wary.particle.engine.ParticleEngine
@@ -40,7 +39,7 @@ fun LineEmitterScreen(modifier: Modifier = Modifier) {
             emitter.end.x = size.width.toDouble()
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             ParticleOverlay(modifier = Modifier.fillMaxSize(), engine)
             Box(modifier = Modifier.fillMaxWidth().background(Color.White).height(200.dp).align(Alignment.BottomCenter)) {
             }

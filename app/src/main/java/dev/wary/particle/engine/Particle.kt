@@ -67,10 +67,10 @@ open class Particle(
     position: Point,
     width: Double,
     height: Double,
+    // TODO sizeChange, oscilators
     var lifeSpan: Long,
     val velocity: Point = Point(0.0, 0.0),
     val acceleration: Point = Point(0.0, 0.0),
-    // val sizeDelta: Point,
     var drawableResId: Int? = null,
     var color: DoubleColor = DoubleColor(),
     val colorChange: DoubleColor = DoubleColor(),

@@ -5,7 +5,8 @@ import android.graphics.Canvas
 
 enum class OverflowPolicy {
     DO_NOT_CREATE,
-    REPLACE_OLDEST
+    REPLACE_OLDEST,
+    REPLACE_OLDEST_NON_EMITTER
 }
 
 /** Manages and updates particles
@@ -14,7 +15,7 @@ enum class OverflowPolicy {
 class ParticleEngine(
     initialState: List<Entity> = emptyList(),
     val renderer: ParticleRenderer = ParticleRenderer(),
-    val gravity: Int = 0,
+    val gravity: Double = 0.0,
     val edgeCollisions: Boolean = true,
     val particleCollisions: Boolean = false,
     val maxCapacity: Int = 10_000,
@@ -48,7 +49,7 @@ class ParticleEngine(
         lastUpdateTime = currentTime
 
         val newEntities = mutableListOf<Entity>()
-
+        val createdEntities = mutableListOf<Entity>()
         for (i in entities.indices) {
             val entity = entities[i]
 
@@ -61,12 +62,13 @@ class ParticleEngine(
 
             if (entity is Emitter) {
                 repeat((entity.emitRate * elapsedTime).toInt()) {
-                    newEntities.add(entity.emit())
+                    createdEntities.add(entity.emit())
                 }
             }
         }
         entities.clear()
         entities.addEntities(newEntities)
+        entities.addEntities(createdEntities)
     }
 
     private fun MutableList<Entity>.addEntities(newEntities: List<Entity>) {
@@ -76,8 +78,20 @@ class ParticleEngine(
             } else if (overflowPolicy == OverflowPolicy.REPLACE_OLDEST) {
                 this[startIndex++] = entity
                 if (startIndex >= this.size) startIndex = 0
+            } else if (overflowPolicy == OverflowPolicy.REPLACE_OLDEST_NON_EMITTER) {
+                var start = startIndex
+                while (this[start] is Emitter) {
+                    start++
+                    if (start >= this.size) start = 0
+                    if (start == startIndex) {
+                        return
+                    }
+                }
+                this[start++] = entity
+                startIndex = start
+                if (startIndex >= this.size) startIndex = 0
             } else {
-                break
+                return
             }
         }
     }
@@ -90,7 +104,7 @@ class ParticleEngine(
 
         particle.lifeSpan -= elapsedTime
         particle.velocity.x += particle.acceleration.x * elapsedTime
-        particle.velocity.y += particle.acceleration.y * elapsedTime
+        particle.velocity.y += (gravity + particle.acceleration.y) * elapsedTime
 
         particle.color += particle.colorChange * elapsedTime
 
