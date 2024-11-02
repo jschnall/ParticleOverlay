@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import androidx.appcompat.content.res.AppCompatResources
-import java.util.logging.Logger
 
 
 class ParticleRenderer {
@@ -21,7 +20,6 @@ class ParticleRenderer {
         canvas.drawText("Entities: ${engine.entities.size }", 80f, 80f, paint)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     fun drawParticle(particle: Particle, canvas: Canvas, context: Context) {
         bounds.left = particle.position.x.toInt()
         bounds.right = (particle.position.x + particle.width).toInt()
