@@ -25,6 +25,7 @@ import dev.wary.particle.engine.RangedParticleBuilder
 import dev.wary.particle.engine.Rect
 import dev.wary.particle.engine.listParamOf
 import dev.wary.particle.engine.toDoubleColor
+import kotlin.random.Random
 
 @Composable
 fun ParticleEmitterScreen(modifier: Modifier = Modifier) {
@@ -48,16 +49,16 @@ fun buildParticleEmitter(): ParticleEngine {
     val builder = RangedParticleBuilder(
         ParticleParams(
             lifeSpan = LongRangeParam(2000, 5000),
-            width = DoubleRangeParam(8.0, 24.0),
+            width = DoubleRangeParam(8.0, 16.0),
             height = DoubleRangeParam(8.0, 24.0),
-            vx = DoubleRangeParam(-0.02, 0.02),
+            vx = DoubleRangeParam(-0.04, 0.04),
             vy = DoubleRangeParam(-0.1, -0.04),
             ax = ExactParam(0.0),
             ay = ExactParam(0.00001),
             color = listParamOf(
                 Color.YELLOW.toDoubleColor()
             ),
-            colorChange = ExactParam(DoubleColor(-0.04, 0.0, -0.1, 0.0)),
+            colorChange = ExactParam(DoubleColor(-0.1, 0.0, -0.2, 0.0)),
         )
     )
 
@@ -71,16 +72,16 @@ fun buildParticleEmitter(): ParticleEngine {
             ParticleEmitter(
                 builder = builder,
                 lifeSpan = 30_000,
-                source = { Point(x + w / 2 - 10, y + 40) },
+                source = { Point(x + w / 2 -4 + Random.nextInt(-16, 16), y + 40) },
                 width = w,
                 height = h,
                 position = Point(x, y),
                 velocity = Point(0.0, 0.0),
                 drawableResId = R.drawable.match,
-                emitRate = 0.2
+                emitRate = 0.2,
             )
         )
     }
 
-    return ParticleEngine(entities)
+    return ParticleEngine(entities, particleCollisions = true)
 }
