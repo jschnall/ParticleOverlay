@@ -33,8 +33,8 @@ class ParticleOverlayView(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         engine?.let {
-            it.bounds.right = width.toDouble()
-            it.bounds.bottom = height.toDouble()
+            it.bounds.width = width.toDouble()
+            it.bounds.height = height.toDouble()
         }
         for (listener in onSizeChangeListeners) {
             listener(w, h)

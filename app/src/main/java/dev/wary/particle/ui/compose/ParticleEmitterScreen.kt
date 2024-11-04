@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.wary.particle.R
 import dev.wary.particle.engine.DoubleColor
-import dev.wary.particle.engine.Entity
 import dev.wary.particle.engine.ParticleEmitter
 import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.ParticleParams
@@ -23,6 +22,7 @@ import dev.wary.particle.engine.DoubleRangeParam
 import dev.wary.particle.engine.ExactParam
 import dev.wary.particle.engine.LongRangeParam
 import dev.wary.particle.engine.RangedParticleBuilder
+import dev.wary.particle.engine.Rect
 import dev.wary.particle.engine.listParamOf
 import dev.wary.particle.engine.toDoubleColor
 
@@ -66,7 +66,7 @@ fun buildParticleEmitter(): ParticleEngine {
     val w = 52.0
     val h = 473.0
 
-    val entities = mutableListOf<Entity>().apply {
+    val entities = mutableListOf<Rect>().apply {
         add(
             ParticleEmitter(
                 builder = builder,

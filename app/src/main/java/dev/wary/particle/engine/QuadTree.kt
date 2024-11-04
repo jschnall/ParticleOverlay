@@ -1,100 +1,142 @@
 package dev.wary.particle.engine
 
-class QuadTree<T>(val width: Double, val height: Double) {
-    val root: Node<T> = Node()
-    // val map = mutableMapOf<T, MutableSet<Node<T>>>()
-
-//    fun add(entry: Entry<Rect>) {
-//        addInner(root, Point(rect.top, rect.left), rect, 0.0, 0.0, width, height)
-//        addInner(root, Point(rect.top, rect.right), rect, 0.0, 0.0, width, height)
-//        addInner(root, Point(rect.bottom, rect.left), rect, 0.0, 0.0, width, height)
-//        addInner(root, Point(rect.bottom, rect.right), rect, 0.0, 0.0, width, height)
-//    }
+class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
+    private val root: Node<T> = Node()
+    private val valueToNode = mutableMapOf<T, Node<T>>()
 
     /**
-     * Returns the node containing this point, or null if it is not in the QuadTree
+     * Returns a list of any pre-inserted values that overlaps with rect.
      */
-    fun find(point: Point): Node<T>? = findInner(root, point, 0.0, 0.0, width, height)
-
-    private fun findInner(root: Node<T>, point: Point, x: Double, y: Double, width: Double, height: Double): Node<T>? {
-        if (root.isLeaf) {
-            for (entry in root.content) {
-                if (entry.point == point) {
-                    return root
-                }
-            }
-            return null
-        } else {
-            val xMid = x + width / 2
-            val yMid = y + height / 2
-            if (point.x < xMid) {
-                if (point.y < yMid) {
-                    return findInner(root.topLeft!!, point, x, y, xMid, yMid)
-                } else {
-                    return findInner(root.bottomLeft!!, point, x, yMid, xMid, y + height)
-                }
-            } else {
-                if (point.y < yMid) {
-                    return findInner(root.topRight!!, point, xMid, y, x + width, yMid)
-                } else {
-                    return findInner(root.bottomRight!!, point, xMid, yMid, x + width, y + height)
-                }
-            }
-        }
+    fun collisions(rect: Rect): List<T> {
+        // TODO
+        return emptyList()
     }
 
-    fun add(point: Point, value: T) {
-        addInner(root, entryOf(point, value), 0.0, 0.0, width, height)
+    fun findLocalEntries(rect: Rect): List<Entry<T>> {
+        val result = mutableListOf<Entry<T>>()
+        //findInnerRect(rect, result)
+        return result
     }
 
-    private fun splitNode(root: Node<T>, x: Double, y: Double, width: Double, height: Double) {
-        root.isLeaf = false
+    fun findInnerRect() {
+        // TODO
+    }
 
-        root.topLeft = Node()
-        root.topRight = Node()
-        root.bottomLeft = Node()
-        root.bottomRight = Node()
+    /**
+     * Returns a list of any other pre-inserted values this overlaps with.
+     * If value does not exist in the tree, returns an empty list.
+     */
+    fun collisions(rect: Rect, value: T): List<T> {
+        val entries = findLocalEntries(value)
 
-        for (entry in root.content) {
-            // map[entry.data]?.remove(root)
-            addInner(root, entry, x, y, width, height)
+        val results = mutableListOf<T>()
+        for (entry in entries) {
+            if (collides(entry.rect, rect)) {
+                results.add(entry.value)
+            }
         }
-        root.content.clear()
+
+        return results
+    }
+
+    private fun collides(rect: Rect, rect2: Rect): Boolean {
+        // If one or more corners of 1 rect are inside the other, they overlap
+        return ((rect.left in rect2.left .. rect2.right ||
+                 rect.right in rect2.left .. rect2.right) &&
+                (rect.top in rect2.top .. rect2.bottom ||
+                 rect.bottom in rect2.top .. rect2.bottom)) ||
+
+                ((rect2.left in rect.left .. rect.right ||
+                  rect2.right in rect.left .. rect.right) &&
+                 (rect2.top in rect.top .. rect.bottom ||
+                  rect2.bottom in rect.top .. rect.bottom))
+    }
+
+    /**
+     * Returns a list of any pre-inserted entries that value may overlap with.
+     */
+    fun findLocalEntries(value: T): List<Entry<T>> {
+        val result = mutableListOf<Entry<T>>()
+        valueToNode[value]?.let {
+            findInner(it, result)
+        }
+        return result.filter { it.value != value }
+    }
+
+    private fun findInner(root: Node<T>, result: MutableList<Entry<T>>) {
+        result.addAll(root.content)
+        root.topLeft?.let { findInner(it, result) }
+        root.topRight?.let { findInner(it, result) }
+        root.bottomLeft?.let { findInner(it, result) }
+        root.bottomRight?.let { findInner(it, result) }
+    }
+
+    /**
+     * Adds a value with the specified bounding rectangle
+     */
+    fun add(rect: Rect, value: T) {
+        addInner(root, entryOf(rect, value), 0.0, 0.0, width, height)
     }
 
     private fun addInner(root: Node<T>, entry: Entry<T>, x: Double, y: Double, width: Double, height: Double) {
-        if (root.isLeaf) {
-            root.content.add(entry)
-            if (root.content.size > 2 && width > 1 && height > 1) {
-                splitNode(root, x, y, width, height)
+        // Note: It's possible that objects could be partially
+        // or entirely offscreen, so out of the quadtree bounds.
+        // this is accounted for in checks below
+
+        val halfWidth = width / 2
+        val halfHeight = height / 2
+        val xMid = x + halfWidth
+        val yMid = y + halfHeight
+
+        if (entry.rect.right < xMid && entry.rect.right >= x) {
+            if (entry.rect.bottom < yMid && entry.rect.bottom >= y) {
+                // Traverse topLeft sub region
+                if (root.topLeft == null) {
+                    root.topLeft = Node()
+                }
+                addInner(root.topLeft!!, entry, x, y, halfWidth, halfHeight)
+            } else if (entry.rect.top >= yMid && entry.rect.top < y + height) {
+                // Traverse bottomLeft sub region
+                if (root.bottomLeft == null) {
+                    root.bottomLeft = Node()
+                }
+                addInner(root.bottomLeft!!, entry, x, yMid, halfWidth, halfHeight)
             } else {
-                // val set = map.getOrPut(entry.data) { mutableSetOf() }
-                // set.add(root)
+                // Cannot fit in sub regions, add entry here
+                addEntry(root, entry)
+            }
+        } else if (entry.rect.left >= xMid && entry.rect.left < x + width) {
+            if (entry.rect.bottom < yMid && entry.rect.bottom >= y) {
+                // Traverse topRight sub region
+                if (root.topRight == null) {
+                    root.topRight = Node()
+                }
+                addInner(root.topRight!!, entry, xMid, y, halfWidth, halfHeight)
+            } else if (entry.rect.top >= yMid && entry.rect.top < y + height) {
+                // Traverse bottomRight sub region
+                if (root.bottomRight == null) {
+                    root.bottomRight = Node()
+                }
+                addInner(root.bottomRight!!, entry, xMid, yMid, halfWidth, halfHeight)
+            } else {
+                // Cannot fit in sub regions, add entry here
+                addEntry(root, entry)
             }
         } else {
-            val xMid = x + width / 2
-            val yMid = y + height / 2
-            if (entry.point.x < xMid) {
-                if (entry.point.y < yMid) {
-                    addInner(root.topLeft!!, entry, x, y, xMid, yMid)
-                } else {
-                    addInner(root.bottomLeft!!, entry, x, yMid, xMid, y + height)
-                }
-            } else {
-                if (entry.point.y < yMid) {
-                    addInner(root.topRight!!, entry, xMid, y, x + width, yMid)
-                } else {
-                    addInner(root.bottomRight!!, entry, xMid, yMid, x + width, y + height)
-                }
-            }
+            // Cannot fit in sub regions, add entry here
+            addEntry(root, entry)
         }
     }
 
-    fun <T> entryOf(point: Point, value: T) = Entry(point, value)
+    private fun addEntry(root: Node<T>, entry: Entry<T>) {
+        root.content.add(entry)
+        valueToNode[entry.value] = root
+    }
 
-    class Entry<T>(val point: Point, val data: T)
+    fun <T> entryOf(rect: Rect, value: T) = Entry(rect, value)
+    class Entry<T>(val rect: Rect, val value: T)
 
-    class Node<T>(val content: MutableList<Entry<T>> = mutableListOf(), var isLeaf: Boolean = true) {
+    private class Node<T>(val content: MutableList<Entry<T>> = mutableListOf()) {
         var topLeft: Node<T>? = null
         var topRight: Node<T>? = null
         var bottomLeft: Node<T>? = null

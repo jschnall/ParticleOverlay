@@ -21,10 +21,10 @@ class ParticleRenderer {
     }
 
     fun drawParticle(particle: Particle, canvas: Canvas, context: Context) {
-        bounds.left = particle.position.x.toInt()
-        bounds.right = (particle.position.x + particle.width).toInt()
-        bounds.top = particle.position.y.toInt()
-        bounds.bottom = (particle.position.y + particle.height).toInt()
+        bounds.left = particle.left.toInt()
+        bounds.right = (particle.left + particle.width).toInt()
+        bounds.top = particle.top.toInt()
+        bounds.bottom = (particle.top + particle.height).toInt()
 
         // Draw background
         paint.setARGB(

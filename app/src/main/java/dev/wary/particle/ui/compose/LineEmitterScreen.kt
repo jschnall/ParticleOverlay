@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -24,11 +23,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.wary.particle.R
 import dev.wary.particle.engine.DoubleColor
-import dev.wary.particle.engine.Entity
 import dev.wary.particle.engine.LineEmitter
 import dev.wary.particle.engine.Particle
 import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.Point
+import dev.wary.particle.engine.Rect
 import dev.wary.particle.engine.TemplateParticleBuilder
 import dev.wary.particle.ui.theme.MyApplicationTheme
 
@@ -76,8 +75,8 @@ fun buildLineEmitter(): LineEmitter {
     return LineEmitter(Point(0.0, 0.0), Point(400.0, 0.0), builder, 0.08)
 }
 
-fun buildEngine(entity: Entity): ParticleEngine {
-    val entities = mutableListOf<Entity>().apply {
+fun buildEngine(entity: Rect): ParticleEngine {
+    val entities = mutableListOf<Rect>().apply {
         add(entity)
     }
 

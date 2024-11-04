@@ -20,6 +20,7 @@ import dev.wary.particle.engine.PointEmitter
 import dev.wary.particle.engine.DoubleRangeParam
 import dev.wary.particle.engine.ExactParam
 import dev.wary.particle.engine.LongRangeParam
+import dev.wary.particle.engine.OnParticleCollision
 import dev.wary.particle.engine.OverflowPolicy
 import dev.wary.particle.engine.RangedParticleBuilder
 import dev.wary.particle.engine.Rect
@@ -27,9 +28,9 @@ import dev.wary.particle.engine.listParamOf
 import dev.wary.particle.engine.toDoubleColor
 
 @Composable
-fun PointEmitterScreen(modifier: Modifier = Modifier) {
-    val emitter = buildEmitter()
-    val engine = remember { mutableStateOf(buildParticleEngine(emitter), neverEqualPolicy()) }
+fun CollisionScreen(modifier: Modifier = Modifier) {
+    val emitter = buildPointEmitter()
+    val engine = remember { mutableStateOf(buildMyEngine(emitter), neverEqualPolicy()) }
 
     Scaffold(modifier = Modifier.fillMaxSize()
         .onSizeChanged { size ->
@@ -40,44 +41,42 @@ fun PointEmitterScreen(modifier: Modifier = Modifier) {
         ParticleOverlay(modifier = Modifier.fillMaxSize(), engine)
 
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            Greeting(name = "Particles", modifier = modifier.align(Alignment.Center))
+            Greeting(name = "Collisions", modifier = modifier.align(Alignment.Center))
         }
     }
 }
 
-fun buildEmitter(): PointEmitter {
+fun buildPointEmitter(): PointEmitter {
     val builder = RangedParticleBuilder(
         ParticleParams(
-            lifeSpan = LongRangeParam(1000, 5000),
-            width = ExactParam(4.0),
-            height = DoubleRangeParam(8.0, 64.0),
+            lifeSpan = LongRangeParam(1_000, 7_000),
+            width = ExactParam(16.0),
+            height = ExactParam(16.0),
             vx = DoubleRangeParam(-0.4, 0.4),
             vy = DoubleRangeParam(-0.4, 0.4),
             ax = ExactParam(0.0),
             ay = ExactParam(0.0),
             color = listParamOf(
-                Color.RED.toDoubleColor(),
                 Color.GREEN.toDoubleColor(),
-                Color.BLUE.toDoubleColor(),
-                Color.YELLOW.toDoubleColor(),
-                Color.MAGENTA.toDoubleColor()
             ),
-            colorChange = ExactParam(DoubleColor(-0.08, 0.0, 0.0, 0.0))
+            colorChange = ExactParam(DoubleColor(-0.08, -0.2, 0.2, -0.2)),
+            onEdgeCollision = listParamOf({ particle -> particle.color = Color.RED.toDoubleColor() }),
+            onParticleCollision = ExactParam({ particle, other -> particle.color.blue = 255.0 })
         )
     )
     return PointEmitter(Point(200.0, 200.0), builder, emitRate = 0.1)
 }
 
-fun buildParticleEngine(entity: Rect): ParticleEngine {
+fun buildMyEngine(entity: Rect): ParticleEngine {
     val entities = mutableListOf<Rect>().apply {
         add(entity)
     }
 
     return ParticleEngine(
         initialState = entities,
-        maxCapacity = 200,
-        edgeCollisions = false,
-        particleCollisions = false,
+        maxCapacity = 500,
+        edgeCollisions = true,
+        particleCollisions = true,
         overflowPolicy = OverflowPolicy.REPLACE_OLDEST_NON_EMITTER
     )
 }

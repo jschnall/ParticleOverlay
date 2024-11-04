@@ -1,26 +1,22 @@
 package dev.wary.particle.engine
 
-import java.util.logging.Logger
-
-
 data class Point(var x: Double, var y: Double)
-data class Rect(var left: Double, var top: Double, var right: Double, var bottom: Double) {
-    val width: Double
-        get() = right - left
 
-    val height: Double
-        get() = bottom - top
+open class Rect(var left: Double, var top: Double, var width: Double, var height: Double) {
+    val right: Double
+        get() = left + width
+
+    val bottom: Double
+        get() = top + height
 }
 
-data class CollisionBehavior(
-    val onEdgeCollision: ((Particle) -> Unit) = {
-        Logger.getLogger("foo").info("Collision")
-    },
-    val onParticleCollision: ((Particle) -> Unit) = {}
-)
+fun interface OnEdgeCollision {
+    fun onEdgeColliision(particle: Particle)
+}
 
-// TODO replace Entity with Rect?
-open class Entity(val position: Point, var width: Double, var height: Double)
+fun interface OnParticleCollision {
+    fun onParticleCollision(particle: Particle, other: Particle)
+}
 
 /** Stores each color component as a double for transitions
  *
@@ -71,7 +67,7 @@ open class Particle(
     position: Point,
     width: Double,
     height: Double,
-    // TODO sizeChange
+    // TODO: sizeChange
     var lifeSpan: Long,
     val velocity: Point = Point(0.0, 0.0),
     val acceleration: Point = Point(0.0, 0.0),
@@ -80,8 +76,9 @@ open class Particle(
     val colorChange: DoubleColor = DoubleColor(),
     var tint: DoubleColor? = null,
     var tintChange: DoubleColor = DoubleColor(),
-    val collisionBehavior: CollisionBehavior = CollisionBehavior()
-): Entity (position = position, width = width, height = height)
+    val onEdgeCollision: (Particle) -> Unit = {},
+    val onParticleCollision: (Particle, Particle) -> Unit = { _, _ -> },
+): Rect (left = position.x, top = position.y, width = width, height = height)
 
 // Used to Initialize new particles
 data class ParticleParams(
@@ -97,4 +94,6 @@ data class ParticleParams(
     val colorChange: Param<DoubleColor> = ExactParam(DoubleColor()),
     val tint: Param<DoubleColor> = ExactParam(DoubleColor()),
     val tintChange: Param<DoubleColor> = ExactParam(DoubleColor()),
+    val onEdgeCollision: Param<(Particle) -> Unit> = listParamOf({}),
+    val onParticleCollision: Param<(Particle, Particle) -> Unit> = listParamOf({ _, _ -> })
 )

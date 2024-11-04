@@ -29,7 +29,9 @@ class TemplateParticleBuilder(val template: Particle): ParticleBuilder {
             color = template.color,
             colorChange = template.colorChange,
             tint = template.tint,
-            tintChange = template.tintChange
+            tintChange = template.tintChange,
+            onEdgeCollision = template.onEdgeCollision,
+            onParticleCollision = template.onParticleCollision
     )
 }
 
@@ -46,17 +48,20 @@ class RangedParticleBuilder(val params: ParticleParams): ParticleBuilder {
             color = params.color.value,
             colorChange = params.colorChange.value,
             tint = params.tint.value,
-            tintChange = params.tintChange.value
+            tintChange = params.tintChange.value,
+            onEdgeCollision = params.onEdgeCollision.value,
+            onParticleCollision = params.onParticleCollision.value
         )
     }
 }
 
 class PointEmitter(
-    position: Point,
+    val position: Point,
     val builder: ParticleBuilder,
     override val emitRate: Double,
-): Entity(
-    position = position,
+): Rect(
+    left = position.x,
+    top = position.y,
     width = 1.0,
     height = 1.0
 ), Emitter, Source {
@@ -69,8 +74,9 @@ class LineEmitter(
     val end: Point,
     val builder: ParticleBuilder,
     override val emitRate: Double,
-): Entity(
-    position = start,
+): Rect(
+    left = start.x,
+    top = start.y,
     width = abs(end.x - start.x),
     height = abs(end.y - start.y)
 ), Emitter, Source {
@@ -117,5 +123,5 @@ class ParticleEmitter(
     colorChange = colorChange
 ), Emitter, Source {
     override fun emit() = builder.build(this)
-    override fun startPosition() = source?.startPosition() ?: position
+    override fun startPosition() = source?.startPosition() ?: Point(left, top)
 }
