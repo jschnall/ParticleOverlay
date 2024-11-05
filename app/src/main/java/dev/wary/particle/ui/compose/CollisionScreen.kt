@@ -41,7 +41,7 @@ fun CollisionScreen(modifier: Modifier = Modifier) {
         ParticleOverlay(modifier = Modifier.fillMaxSize(), engine)
 
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            Greeting(name = "Collisions", modifier = modifier.align(Alignment.Center))
+            //Greeting(name = "Collisions", modifier = modifier.align(Alignment.Center))
         }
     }
 }
@@ -52,19 +52,19 @@ fun buildPointEmitter(): PointEmitter {
             lifeSpan = LongRangeParam(1_000, 7_000),
             width = ExactParam(16.0),
             height = ExactParam(16.0),
-            vx = DoubleRangeParam(-0.4, 0.4),
+            vx = DoubleRangeParam(0.2, 0.4),
             vy = DoubleRangeParam(-0.4, 0.4),
             ax = ExactParam(0.0),
             ay = ExactParam(0.0),
             color = listParamOf(
                 Color.GREEN.toDoubleColor(),
             ),
-            colorChange = ExactParam(DoubleColor(-0.08, -0.2, 0.2, -0.2)),
+            colorChange = ExactParam(DoubleColor(0.0, -0.1, 0.2, -0.2)),
             onEdgeCollision = listParamOf({ particle -> particle.color = Color.RED.toDoubleColor() }),
-            onParticleCollision = ExactParam({ particle, other -> particle.color.blue = 255.0 })
+            onParticleCollision = ExactParam({ particle, other -> particle.color.blue = 255.0  })
         )
     )
-    return PointEmitter(Point(200.0, 200.0), builder, emitRate = 0.1)
+    return PointEmitter(Point(0.0, 0.0), builder, emitRate = 0.1)
 }
 
 fun buildMyEngine(entity: Rect): ParticleEngine {
@@ -77,6 +77,6 @@ fun buildMyEngine(entity: Rect): ParticleEngine {
         maxCapacity = 500,
         edgeCollisions = true,
         particleCollisions = true,
-        overflowPolicy = OverflowPolicy.REPLACE_OLDEST_NON_EMITTER
+        overflowPolicy = OverflowPolicy.REPLACE_OLDEST_NON_EMITTER,
     )
 }

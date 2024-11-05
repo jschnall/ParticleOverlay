@@ -75,7 +75,7 @@ open class Particle(
     var color: DoubleColor = DoubleColor(),
     val colorChange: DoubleColor = DoubleColor(),
     var tint: DoubleColor? = null,
-    var tintChange: DoubleColor = DoubleColor(),
+    val tintChange: DoubleColor = DoubleColor(),
     val onEdgeCollision: (Particle) -> Unit = {},
     val onParticleCollision: (Particle, Particle) -> Unit = { _, _ -> },
 ): Rect (left = position.x, top = position.y, width = width, height = height)

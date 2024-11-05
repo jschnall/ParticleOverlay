@@ -19,8 +19,8 @@ class ComposeActivity : ComponentActivity() {
             MyApplicationTheme {
                  // PointEmitterScreen()
                  // LineEmitterScreen()
-                 ParticleEmitterScreen()
-                 // CollisionScreen()
+                 // ParticleEmitterScreen()
+                 CollisionScreen()
             }
         }
     }

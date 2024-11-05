@@ -3,6 +3,7 @@ package dev.wary.particle.engine
 import android.content.Context
 import android.graphics.Canvas
 import java.util.logging.Logger
+import kotlin.math.abs
 import kotlin.math.sign
 
 enum class OverflowPolicy {
@@ -133,26 +134,15 @@ class ParticleEngine(
 
     private fun handleCollisions(particle: Particle, elapsedTime: Long) {
         var collisionHandled = false
-        if (edgeCollisions && collidesWithEdge(particle, elapsedTime)) {
-            collisionHandled = true
-            particle.onEdgeCollision(particle)
+
+        if (particleCollisions) {
+            collisionHandled = handleParticleCollisions(particle)
         }
 
-         if (particleCollisions) {
-             val colliders = quadTree.collisions(particle, particle)
-             for (collider in colliders) {
-                 if (collider.velocity.x.sign != particle.velocity.x.sign) {
-                     particle.velocity.x = -particle.velocity.x
-                     particle.acceleration.x = -particle.acceleration.x
-                 }
-                 if (collider.velocity.y.sign != particle.velocity.y.sign) {
-                     particle.velocity.y = -particle.velocity.y
-                     particle.acceleration.y = -particle.acceleration.y
-                 }
-
-                 particle.onParticleCollision(particle, collider)
-             }
-         }
+        if (edgeCollisions) {
+            collisionHandled = handleEdgeCollisions(particle, elapsedTime)
+            if (collisionHandled) particle.onEdgeCollision(particle)
+        }
 
         if (!collisionHandled) {
             val vxFrame = particle.velocity.x * elapsedTime
@@ -163,7 +153,35 @@ class ParticleEngine(
         }
     }
 
-    private fun collidesWithEdge(particle: Particle, elapsedTime: Long): Boolean {
+    private fun handleParticleCollisions(particle: Particle): Boolean {
+        val colliders = quadTree.existingCollisions(particle)
+        if (colliders.isEmpty()) return false
+
+        var dirXSum = particle.velocity.x.sign
+        var dirYSum = particle.velocity.y.sign
+
+        for (collider in colliders) {
+            dirXSum += collider.velocity.x.sign
+            dirYSum += collider.velocity.y.sign
+
+            // TODO reorganize this callback
+            particle.onParticleCollision(particle, collider)
+        }
+
+        val dirXAvg = dirXSum / (colliders.size + 1)
+        val dirYAvg = dirYSum / (colliders.size + 1)
+
+        val xs = if (dirXAvg * particle.velocity.x.sign < 1) -particle.velocity.x.sign else particle.velocity.x.sign
+        val ys = if (dirYAvg * particle.velocity.y.sign < 1) -particle.velocity.y.sign else particle.velocity.y.sign
+        particle.velocity.x *= xs
+        particle.acceleration.x = xs * abs(particle.acceleration.x)
+        particle.velocity.y *= ys
+        particle.acceleration.y = ys * abs(particle.acceleration.y)
+
+        return false
+    }
+
+    private fun handleEdgeCollisions(particle: Particle, elapsedTime: Long): Boolean {
         val vxFrame = particle.velocity.x * elapsedTime
         val vyFrame = particle.velocity.y * elapsedTime
 
