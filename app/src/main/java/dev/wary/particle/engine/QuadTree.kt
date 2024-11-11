@@ -91,16 +91,8 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
     }
 
     private fun collides(rect: Rect, rect2: Rect): Boolean {
-        // If one or more corners of 1 rect are inside the other, they overlap
-        return ((rect.left in rect2.left .. rect2.right ||
-                 rect.right in rect2.left .. rect2.right) &&
-                (rect.top in rect2.top .. rect2.bottom ||
-                 rect.bottom in rect2.top .. rect2.bottom)) ||
-
-                ((rect2.left in rect.left .. rect.right ||
-                  rect2.right in rect.left .. rect.right) &&
-                 (rect2.top in rect.top .. rect.bottom ||
-                  rect2.bottom in rect.top .. rect.bottom))
+        return rect.left < rect2.right && rect.right > rect2.left &&
+                rect.top < rect2.bottom && rect.bottom > rect2.top
     }
 
     /**
