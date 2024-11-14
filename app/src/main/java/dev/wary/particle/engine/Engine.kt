@@ -2,7 +2,7 @@ package dev.wary.particle.engine
 
 import android.content.Context
 import android.graphics.Canvas
-import java.util.logging.Logger
+import dev.wary.particle.engine.quadtree.QuadTree
 import kotlin.math.abs
 import kotlin.math.sign
 
