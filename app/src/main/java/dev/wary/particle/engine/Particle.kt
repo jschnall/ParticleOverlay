@@ -1,14 +1,8 @@
 package dev.wary.particle.engine
 
-data class Point(var x: Double, var y: Double)
+import dev.wary.geo.Point
+import dev.wary.geo.Rect
 
-open class Rect(var left: Double, var top: Double, var width: Double, var height: Double) {
-    val right: Double
-        get() = left + width
-
-    val bottom: Double
-        get() = top + height
-}
 
 fun interface OnEdgeCollision {
     fun onEdgeColliision(particle: Particle)
@@ -78,7 +72,7 @@ open class Particle(
     val tintChange: DoubleColor = DoubleColor(),
     val onEdgeCollision: (Particle) -> Unit = {},
     val onParticleCollision: (Particle, Particle) -> Unit = { _, _ -> },
-): Rect (left = position.x, top = position.y, width = width, height = height)
+): Rect(left = position.x, top = position.y, width = width, height = height)
 
 // Used to Initialize new particles
 data class ParticleParams(

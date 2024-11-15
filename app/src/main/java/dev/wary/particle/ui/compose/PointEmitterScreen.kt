@@ -15,14 +15,14 @@ import androidx.compose.ui.layout.onSizeChanged
 import dev.wary.particle.engine.DoubleColor
 import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.ParticleParams
-import dev.wary.particle.engine.Point
+import dev.wary.geo.Point
 import dev.wary.particle.engine.PointEmitter
 import dev.wary.particle.engine.DoubleRangeParam
 import dev.wary.particle.engine.ExactParam
 import dev.wary.particle.engine.LongRangeParam
 import dev.wary.particle.engine.OverflowPolicy
 import dev.wary.particle.engine.RangedParticleBuilder
-import dev.wary.particle.engine.Rect
+import dev.wary.geo.Rect
 import dev.wary.particle.engine.listParamOf
 import dev.wary.particle.engine.toDoubleColor
 

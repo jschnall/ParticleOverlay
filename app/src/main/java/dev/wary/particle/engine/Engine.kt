@@ -2,7 +2,9 @@ package dev.wary.particle.engine
 
 import android.content.Context
 import android.graphics.Canvas
-import dev.wary.particle.engine.quadtree.QuadTree
+import dev.wary.geo.Polygon
+import dev.wary.geo.Rect
+import dev.wary.quadtree.QuadTree
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -35,7 +37,7 @@ class ParticleEngine(
         if (particleCollisions) {
             for (entity in initialState) {
                 if (entity is Particle) {
-                    quadTree.add(entity, entity)
+                    quadTree.add(Polygon(entity.toPoints()), entity)
                 }
             }
         }
@@ -87,7 +89,7 @@ class ParticleEngine(
         quadTree = QuadTree()
         for (entity in entities) {
             if (entity is Particle) {
-                quadTree.add(entity, entity)
+                quadTree.add(Polygon(entity.toPoints()), entity)
             }
         }
     }
@@ -154,7 +156,7 @@ class ParticleEngine(
     }
 
     private fun handleParticleCollisions(particle: Particle): Boolean {
-        val colliders = quadTree.existingCollisions(particle)
+        val colliders = emptyList<Particle>() //quadTree.existingCollisions(particle)
         if (colliders.isEmpty()) return false
 
         var dirXSum = particle.velocity.x.sign
@@ -223,6 +225,6 @@ class ParticleEngine(
     }
 
     companion object {
-        const val DEBUG = false
+        const val DEBUG = true
     }
 }

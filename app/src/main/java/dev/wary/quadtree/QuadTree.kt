@@ -1,6 +1,10 @@
-package dev.wary.particle.engine.quadtree
+package dev.wary.quadtree
 
-class QuadTree<T>(val width: Double, val height: Double) {
+import dev.wary.geo.Polygon
+import java.util.SortedSet
+
+// TODO: replace sortedSets with pure kotlin option compatible with multiplatform
+class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
     private val root: Node<T> = Node(0.0,0.0, width, height)
     private val valueToEntry = mutableMapOf<T, Entry<T>>()
     private val valueToNode = mutableMapOf<T, Node<T>>()
@@ -22,50 +26,75 @@ class QuadTree<T>(val width: Double, val height: Double) {
 //        return results
 //    }
 
-    private fun findAllOverlaps(): List<Set<Entry<T>>> {
-        val listByStart = findLocalEntriesSorted(root, compareBy { it.polygon.min(false) })
-        val listByEnd = findLocalEntriesSorted(root, compareBy { it.polygon.max(false) })
-
-        // Sweep
-
+    private fun findAllOverlaps(): List<List<Entry<T>>> {
+        return sweep2d(
+            innerStartComparator = compareBy<Entry<T>> { it.start(true) },
+            innerEndComparator = compareBy<Entry<T>> { it.end(true) },
+            listByStart = findLocalEntriesSorted(root, compareBy { it.start(false) }),
+            listByEnd = findLocalEntriesSorted(root, compareBy { it.end(false) })
+        )
     }
 
     /**
      * returns a map of entries to a set of other entries they may overlap, without duplicates
      */
-    fun sweep(
+    private fun sweep2d(
+        innerStartComparator: Comparator<Entry<T>>,
+        innerEndComparator: Comparator<Entry<T>>,
         listByStart: List<Entry<T>>,
         listByEnd: List<Entry<T>>,
         isVertical: Boolean = false
-    ): Map<Entry<T>, Set<Entry<T>>> {
-        val result = mutableMapOf<Entry<T>, MutableSet<Entry<T>>>()
-        val currentSet = mutableSetOf<Entry<T>>()
+    ): List<List<Entry<T>>> {
+        val result = mutableListOf<List<Entry<T>>>()
+        val currentSetByStart = sortedSetOf(innerStartComparator)
+        val currentSetByEnd = sortedSetOf(innerEndComparator)
         var startIndex = 0
         var endIndex = 0
 
         while (startIndex < listByStart.size && endIndex < listByEnd.size) {
-            if (listByStart[startIndex].polygon.min(isVertical) < listByEnd[endIndex].polygon.max(isVertical)) {
-                currentSet.add(listByStart[startIndex++])
+            if (listByStart[startIndex].start(isVertical) < listByEnd[endIndex].end(isVertical)) {
+                currentSetByStart.add(listByStart[startIndex++])
+                currentSetByEnd.add(listByStart[startIndex++])
             } else {
-                currentSet.remove(listByEnd[endIndex])
-                if (currentSet.isNotEmpty()) {
-                    result.getOrPut(listByEnd[endIndex]) { mutableSetOf() }
-                        .addAll(currentSet)
+                val entry = listByEnd[endIndex]
+                currentSetByStart.remove(entry)
+                currentSetByEnd.remove(entry)
+
+                val candidates = sweepSortedSets(entry, currentSetByStart, currentSetByEnd)
+
+                for (candidate in candidates) {
+                    if (entry.isOverlap(candidate)) {
+                        result.add(listOf(entry, candidate))
+                    }
                 }
                 endIndex++
             }
         }
 
         while (endIndex < listByEnd.size) {
-            currentSet.remove(listByEnd[endIndex])
-            if (currentSet.isNotEmpty()) {
-                result.getOrPut(listByEnd[endIndex]) { mutableSetOf() }
-                    .addAll(currentSet)
+            val entry = listByEnd[endIndex]
+            currentSetByStart.remove(entry)
+            currentSetByEnd.remove(entry)
+
+            val candidates = sweepSortedSets(entry, currentSetByStart, currentSetByEnd)
+
+            for (candidate in candidates) {
+                if (entry.isOverlap(candidate)) {
+                    result.add(listOf(entry, candidate))
+                }
             }
             endIndex++
         }
 
         return result
+    }
+
+    /**
+     * Bin searches
+     */
+    fun sweepSortedSets(entry: Entry<T>, startSet: SortedSet<Entry<T>>, endSet: SortedSet<Entry<T>>): Set<Entry<T>> {
+        val toCompare = entry.copy(reversed = true)
+        return startSet.headSet(toCompare) intersect endSet.tailSet(toCompare)
     }
 
     /**
@@ -158,30 +187,32 @@ class QuadTree<T>(val width: Double, val height: Double) {
 
 
     /**
-     * Remove empty branches
+     * Removes empty branches, which may remain after updating entries
      */
-//   fun prune() {
-//        // TODO
-//        val stack = ArrayDeque<PathNode<T>>()
-//        // Remove empty nodes
-//        var shouldPrune = ptr.topLeft == null &&
-//                ptr.bottomLeft == null &&
-//                ptr.topRight == null &&
-//                ptr.bottomRight == null &&
-//                ptr.content.isEmpty()
-//
-//        while (shouldPrune && stack.isNotEmpty()) {
-//            val top = stack.removeFirst()
-//            ptr = top.node
-//            ptr.children[top.quadrant] = null
-//
-//            shouldPrune = ptr.topLeft == null &&
-//                    ptr.bottomLeft == null &&
-//                    ptr.topRight == null &&
-//                    ptr.bottomRight == null &&
-//                    ptr.content.isEmpty()
-//        }
-//    }
+   fun prune() {
+        data class PathNode<T>(val node: Node<T>, val parent: Node<T>, val childIndex: Int)
+
+        val stack = ArrayDeque<PathNode<T>>()
+        for (i in root.children.indices) {
+            root.children[i]?.let {
+                stack.addFirst(PathNode(it, root, i))
+            }
+        }
+
+        while (stack.isNotEmpty()) {
+            val pathNode = stack.removeFirst()
+
+            if (pathNode.node.entries.isEmpty() && pathNode.node.isLeaf()) {
+                pathNode.parent.children[pathNode.childIndex] = null
+            } else {
+                for (i in pathNode.node.children.indices) {
+                    pathNode.node.children[i]?.let {
+                        stack.addFirst(PathNode(it, pathNode.node, i))
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Adds a value with the specified polygon to the deepest node that fully contains it.
@@ -330,7 +361,12 @@ class QuadTree<T>(val width: Double, val height: Double) {
 
     fun <T> entryOf(polygon: Polygon, value: T) = Entry(polygon, value)
 
-    class Entry<T>(val polygon: Polygon, val value: T)
+    // reversed reverses the result for start and end
+    data class Entry<T>(val polygon: Polygon, val value: T, val reversed: Boolean = false) {
+        fun start(isVertical: Boolean) = if (reversed) polygon.max(isVertical) else polygon.min(isVertical)
+        fun end(isVertical: Boolean) = if (reversed) polygon.min(isVertical) else polygon.max(isVertical)
+        fun isOverlap(entry: Entry<T>) = polygon.isOverlap(entry.polygon)
+    }
 
     private data class Node<T>(
         val x: Double,
@@ -353,8 +389,6 @@ class QuadTree<T>(val width: Double, val height: Double) {
         }
     }
 
-//    private data class PathNode<T>(val node: Node<T>, val quadrant: Quadrant)
-//
     private enum class Quadrant(val index: Int) {
         TopLeft(0),
         TopRight(1),
