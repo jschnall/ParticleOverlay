@@ -17,13 +17,13 @@ enum class OverflowPolicy {
     REPLACE_OLDEST_NON_EMITTER
 }
 
-/** Manages and updates particles
- *
+/**
+ * Manages and updates particles
  */
 class ParticleEngine(
     initialState: List<Rect> = emptyList(),
     val renderer: ParticleRenderer = ParticleRenderer(),
-    //val gravity: Double = 0.0,
+    // val gravity: Double = 0.0,
     val edgeCollisions: Boolean = true,
     val particleCollisions: Boolean = false,
     val maxCapacity: Int = 10_000,
@@ -44,8 +44,9 @@ class ParticleEngine(
         for (entity in initialState) {
             if (entity is Particle) {
                 val polygon = entity.toPolygon()
-
-                quadTree.add(polygon, entity)
+                if (particleCollisions) {
+                    quadTree.add(polygon, entity)
+                }
                 collisionBounds.add(polygon)
             } else {
                 collisionBounds.add(null)
@@ -105,14 +106,16 @@ class ParticleEngine(
 
         entities.clear()
         collisionBounds.clear()
-        quadTree = QuadTree(width = bounds.width, height = bounds.height)
+        if (particleCollisions) {
+            quadTree = QuadTree(width = bounds.width, height = bounds.height)
+        }
         for (entry in updatedEntities) {
             val entity = entry.key
             val polygon = entry.value
 
             if (entities.addEntity(entity)) {
                 collisionBounds.add(polygon)
-                if (entity is Particle) {
+                if (particleCollisions && entity is Particle) {
                     quadTree.add(polygon!!, entity)
                 }
             }
@@ -123,17 +126,17 @@ class ParticleEngine(
 
             if (entities.addEntity(entity)) {
                 collisionBounds.add(polygon)
-                if (entity is Particle) {
+                if (particleCollisions && entity is Particle) {
                     quadTree.add(Polygon(entity.toPoints()), entity)
                 }
             }
         }
 
-        val particleCollisions = quadTree.findAllOverlaps()
+        val allCollisions = quadTree.findAllOverlaps()
 
         for (entity in entities) {
             if (entity is Particle) {
-                updateParticle(entity, elapsedTime, particleCollisions.getOrDefault(entity, emptyList()))
+                updateParticle(entity, elapsedTime, allCollisions.getOrDefault(entity, emptyList()))
             }
         }
     }

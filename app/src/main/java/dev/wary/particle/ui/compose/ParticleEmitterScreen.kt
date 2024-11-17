@@ -51,10 +51,10 @@ fun buildParticleEmitter(): ParticleEngine {
             lifeSpan = LongRangeParam(2000, 5000),
             width = DoubleRangeParam(8.0, 16.0),
             height = DoubleRangeParam(8.0, 24.0),
-            vx = DoubleRangeParam(-0.04, 0.04),
+            vx = DoubleRangeParam(-0.02, 0.02),
             vy = DoubleRangeParam(-0.1, -0.04),
             ax = ExactParam(0.0),
-            ay = ExactParam(0.00001),
+            ay = ExactParam(0.0),
             color = listParamOf(
                 Color.YELLOW.toDoubleColor()
             ),
@@ -72,7 +72,7 @@ fun buildParticleEmitter(): ParticleEngine {
             ParticleEmitter(
                 builder = builder,
                 lifeSpan = 30_000,
-                source = { Point(x + w / 2 -4 + Random.nextInt(-16, 16), y + 40) },
+                source = { Point(x + w / 2 -4 + Random.nextInt(-16, 16), y + 48) },
                 width = w,
                 height = h,
                 position = Point(x, y),
@@ -83,5 +83,5 @@ fun buildParticleEmitter(): ParticleEngine {
         )
     }
 
-    return ParticleEngine(entities, particleCollisions = true)
+    return ParticleEngine(entities, particleCollisions = false)
 }
