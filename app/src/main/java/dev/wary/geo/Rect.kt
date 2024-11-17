@@ -8,7 +8,11 @@ open class Rect(var left: Double, var top: Double, var width: Double, var height
         get() = top + height
 
     fun toPoints(): List<Point> {
-        return listOf(Point(left, top), Point(right, top), Point(left, bottom), Point(right, bottom))
+        return listOf(Point(left, top), Point(right, top), Point(right, bottom), Point(left, bottom))
+    }
+
+    fun toPolygon(): Polygon {
+        return Polygon(toPoints())
     }
 }
 

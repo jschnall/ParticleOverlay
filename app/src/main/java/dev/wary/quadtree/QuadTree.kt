@@ -4,10 +4,11 @@ import dev.wary.geo.Polygon
 import java.util.SortedSet
 
 // TODO: replace sortedSets with pure kotlin option compatible with multiplatform
-class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
+// TODO implement max depth option
+class QuadTree<T>(val width: Double = 0.0, val height: Double = 0.0, val maxDepth: Int = -1) {
     private val root: Node<T> = Node(0.0,0.0, width, height)
     private val valueToEntry = mutableMapOf<T, Entry<T>>()
-    private val valueToNode = mutableMapOf<T, Node<T>>()
+    //private val valueToNode = mutableMapOf<T, Node<T>>()
 
     /**
      * Returns a list of any values that overlaps with the polygon.
@@ -26,17 +27,17 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
 //        return results
 //    }
 
-    private fun findAllOverlaps(): List<List<Entry<T>>> {
+    fun findAllOverlaps(): Map<T, List<T>> {
         return sweep2d(
-            innerStartComparator = compareBy<Entry<T>> { it.start(true) },
-            innerEndComparator = compareBy<Entry<T>> { it.end(true) },
-            listByStart = findLocalEntriesSorted(root, compareBy { it.start(false) }),
-            listByEnd = findLocalEntriesSorted(root, compareBy { it.end(false) })
+            innerStartComparator = compareBy<Entry<T>> { it.start(true) }.thenBy { it.hashCode() },
+            innerEndComparator = compareBy<Entry<T>> { it.end(true) }.thenBy { it.hashCode() },
+            listByStart = findLocalEntriesSorted(root, compareBy<Entry<T>> { it.start(false) }.thenBy { it.hashCode() }),
+            listByEnd = findLocalEntriesSorted(root, compareBy<Entry<T>> { it.end(false) }.thenBy { it.hashCode() })
         )
     }
 
     /**
-     * returns a map of entries to a set of other entries they may overlap, without duplicates
+     * returns collisions
      */
     private fun sweep2d(
         innerStartComparator: Comparator<Entry<T>>,
@@ -44,17 +45,18 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
         listByStart: List<Entry<T>>,
         listByEnd: List<Entry<T>>,
         isVertical: Boolean = false
-    ): List<List<Entry<T>>> {
-        val result = mutableListOf<List<Entry<T>>>()
+    ): Map<T, List<T>> {
+        val result = mutableMapOf<T, MutableList<T>>()
         val currentSetByStart = sortedSetOf(innerStartComparator)
         val currentSetByEnd = sortedSetOf(innerEndComparator)
         var startIndex = 0
         var endIndex = 0
 
         while (startIndex < listByStart.size && endIndex < listByEnd.size) {
-            if (listByStart[startIndex].start(isVertical) < listByEnd[endIndex].end(isVertical)) {
-                currentSetByStart.add(listByStart[startIndex++])
-                currentSetByEnd.add(listByStart[startIndex++])
+            if (listByStart[startIndex].start(isVertical) <= listByEnd[endIndex].end(isVertical)) {
+                currentSetByStart.add(listByStart[startIndex])
+                currentSetByEnd.add(listByStart[startIndex])
+                startIndex++
             } else {
                 val entry = listByEnd[endIndex]
                 currentSetByStart.remove(entry)
@@ -64,7 +66,8 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
 
                 for (candidate in candidates) {
                     if (entry.isOverlap(candidate)) {
-                        result.add(listOf(entry, candidate))
+                        result.getOrPut(entry.value) { mutableListOf() }.add(candidate.value)
+                        result.getOrPut(candidate.value) { mutableListOf() }.add(entry.value)
                     }
                 }
                 endIndex++
@@ -80,7 +83,8 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
 
             for (candidate in candidates) {
                 if (entry.isOverlap(candidate)) {
-                    result.add(listOf(entry, candidate))
+                    result.getOrPut(entry.value) { mutableListOf() }.add(candidate.value)
+                    result.getOrPut(candidate.value) { mutableListOf() }.add(entry.value)
                 }
             }
             endIndex++
@@ -90,9 +94,9 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
     }
 
     /**
-     * Bin searches
+     *
      */
-    fun sweepSortedSets(entry: Entry<T>, startSet: SortedSet<Entry<T>>, endSet: SortedSet<Entry<T>>): Set<Entry<T>> {
+    private fun sweepSortedSets(entry: Entry<T>, startSet: SortedSet<Entry<T>>, endSet: SortedSet<Entry<T>>): Set<Entry<T>> {
         val toCompare = entry.copy(reversed = true)
         return startSet.headSet(toCompare) intersect endSet.tailSet(toCompare)
     }
@@ -173,8 +177,8 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
 
         val tl = findLocalEntriesSorted(root.children[Quadrant.TopLeft.index], comparator, isVertical)
         val bl = findLocalEntriesSorted(root.children[Quadrant.BottomLeft.index], comparator, isVertical)
-        val tr = findLocalEntriesSorted(root.children[Quadrant.BottomLeft.index], comparator, isVertical)
-        val br = findLocalEntriesSorted(root.children[Quadrant.BottomLeft.index], comparator, isVertical)
+        val tr = findLocalEntriesSorted(root.children[Quadrant.TopRight.index], comparator, isVertical)
+        val br = findLocalEntriesSorted(root.children[Quadrant.BottomRight.index], comparator, isVertical)
 
         val childEntries = if (isVertical) {
             tl.mergeWith(tr, comparator).plus(bl.mergeWith(br, comparator))
@@ -272,6 +276,19 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
         return false
     }
 
+    /**
+     * Goes directly to the node containing entry and removes it
+     */
+//    private fun remove(entry: Entry<T>): Boolean {
+//        valueToNode[entry.value]?.let {
+//            return removeEntry(it, entry)
+//        }
+//        return false
+//    }
+
+    /**
+     * Traverses from root to find the entry to remove
+     */
     private fun remove(root: Node<T>, entry: Entry<T>): Boolean {
         val polygon = entry.polygon
         var ptr: Node<T> = root
@@ -294,23 +311,20 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
     }
 
     /**
-     * Removes and reinserts the entry into the quadtree using the newly provided bounds
+     * Removes the entry if it exists, and then inserts the entry into the quadtree using the newly provided bounds
      */
 
     fun update(newBounds: Polygon, value: T): Boolean {
         valueToEntry[value]?.let { entry ->
-            if (remove(root, entry)) {
-                return add(newBounds, value)
-            }
+            remove(root, entry)
         }
-
-        return false
+        return add(newBounds, value)
     }
 
     private fun removeEntry(root: Node<T>, entry: Entry<T>): Boolean {
         if (root.entries.remove(entry)) {
             valueToEntry.remove(entry.value)
-            valueToNode.remove(entry.value)
+            // valueToNode[entry.value] = root
             return true
         }
         return false
@@ -319,7 +333,7 @@ class QuadTree<T>(var width: Double = 0.0, var height: Double = 0.0) {
     private fun addEntry(root: Node<T>, entry: Entry<T>): Boolean {
         if (root.entries.add(entry)) {
             valueToEntry[entry.value] = entry
-            valueToNode[entry.value] = root
+            // valueToNode[entry.value] = root
             return true
         }
         return false

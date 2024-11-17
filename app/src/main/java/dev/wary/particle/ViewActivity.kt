@@ -82,6 +82,6 @@ class ViewActivity : ComponentActivity() {
             add(entity)
         }
 
-        return ParticleEngine(gravity = 0.0005, initialState = entities, edgeCollisions = false)
+        return ParticleEngine(/*gravity = 0.0005,*/ initialState = entities, edgeCollisions = false)
     }
 }

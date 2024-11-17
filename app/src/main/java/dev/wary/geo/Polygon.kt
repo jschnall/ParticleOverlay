@@ -1,6 +1,8 @@
 package dev.wary.geo
 
+import java.util.Collections
 import kotlin.math.abs
+
 
 data class Projection(val min: Double, val max: Double) {
     fun contains(projection: Projection): Boolean {
@@ -31,9 +33,9 @@ data class Polygon(val points: List<Point>) {
     fun axes(): List<Point> {
         val result = mutableListOf<Point>()
 
-        result.add((points[0] - points[points.size - 1]).normal())
+        result.add((points[0] - points[points.size - 1]).unitNormal())
         for (i in 1 until points.size) {
-            result.add((points[i] - points[i - 1]).normal())
+            result.add((points[i] - points[i - 1]).unitNormal())
         }
 
         return result
@@ -58,8 +60,6 @@ data class Polygon(val points: List<Point>) {
             val p2 = polygon.projection(axis)
 
             if (!p1.isOverlap(p2)) return false
-
-            // get the overlap
         }
         for (axis in polygon.axes()) {
             val p1 = projection(axis)
@@ -127,59 +127,67 @@ data class Polygon(val points: List<Point>) {
     }
 }
 
-// To find orientation of ordered triplet (p, q, r).
-// The function returns following values
-// 0 --> p, q and r are colinear
-// 1 --> Clockwise
-// 2 --> Counterclockwise
-fun orientation(p: Point, q: Point, r: Point): Int {
-    val v = ((q.y - p.y) * (r.x - q.x) -
-            (q.x - p.x) * (r.y - q.y)).toInt()
 
-    if (v == 0) return 0 // colinear
-
-    return if ((v > 0)) 1 else 2 // clock or counterclock wise
+// Cross product of two vectors OA and OB
+// returns positive for counter clockwise
+// turn and negative for clockwise turn
+fun crossProduct(O: Point, A: Point, B: Point): Long {
+    return ((A.x - O.x) * (B.y - O.y)
+            - (A.y - O.y) * (B.x - O.x)).toLong()
 }
 
-fun convexHull(points: List<Point>): List<Point> {
-    val hull = mutableListOf<Point>()
+// Returns a list of points on the convex hull
+// in counter-clockwise order
+fun convexHull(points: MutableList<Point>): List<Point> {
+    val n = points.size
+    var k = 0
 
-    // There must be at least 3 points
-    if (points.size < 3) return hull
+    if (n <= 3) return points
 
-    // Find the leftmost point
-    var l = 0
-    for (i in 1 until points.size) if (points[i].x < points[l].x) l = i
+    val ans: MutableList<Point> = ArrayList(2 * n)
 
-    // Start from leftmost point, keep moving
-    // counterclockwise until reach the start point
-    // again. This loop runs O(h) times where h is
-    // number of points in result or output.
-    var p = l
-    var q: Int
-    do {
-        // Add current point to result
-        hull.add(points[p])
+    // Sort points lexicographically
+    points.sort()
 
-        // Search for a point 'q' such that
-        // orientation(p, x, q) is counterclockwise
-        // for all points 'x'. The idea is to keep
-        // track of last visited most counterclock-
-        // wise point in q. If any point 'i' is more
-        // counterclock-wise than q, then update q.
-        q = (p + 1) % points.size
+    // Build lower hull
+    for (i in 0..<n) {
+        // If the point at K-1 position is not a part
+        // of hull as vector from ans[k-2] to ans[k-1]
+        // and ans[k-2] to A[i] has a clockwise turn
+        while (k >= 2
+            && (crossProduct(
+                ans[k - 2],
+                ans[k - 1], points[i]
+            )
+                    <= 0)
+        ) ans.removeAt(--k)
+        ans.add(points[i])
+        k++
+    }
 
-        for (i in points.indices) {
-            // If i is more counterclockwise than
-            // current q, then update q
-            if (orientation(points[p], points[i], points[q]) == 2) q = i
-        }
 
-        // Now q is the most counterclockwise with
-        // respect to p. Set p as q for next iteration,
-        // so that q is added to result 'hull'
-        p = q
-    } while (p != l) // While we don't come to first
+    // Build upper hull
+    var i = n - 2
+    val t = k
+    while (i >= 0) {
+        // If the point at K-1 position is not a part
+        // of hull as vector from ans[k-2] to ans[k-1]
+        // and ans[k-2] to A[i] has a clockwise turn
+        while (k > t
+            && (crossProduct(
+                ans[k - 2],
+                ans[k - 1], points[i]
+            )
+                    <= 0)
+        ) ans.removeAt(--k)
+        ans.add(points[i])
+        k++
+        --i
+    }
 
-    return hull
+
+    // Resize the array to desired size
+    ans.removeAt(ans.size - 1)
+
+    return ans
 }

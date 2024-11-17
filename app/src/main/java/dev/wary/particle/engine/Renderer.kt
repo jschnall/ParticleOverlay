@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import androidx.appcompat.content.res.AppCompatResources
+import dev.wary.geo.Point
+import dev.wary.geo.Polygon
 
 
 class ParticleRenderer {
@@ -18,6 +20,37 @@ class ParticleRenderer {
         paint.color = Color.BLACK
         paint.textSize = 48f
         canvas.drawText("Entities: ${engine.entities.size }", 80f, 80f, paint)
+    }
+
+    private fun drawShape(points: List<Point>, canvas: Canvas) {
+        val arr = FloatArray(points.size * 4)
+        var index = 0
+
+        for (i in 1 until points.size) {
+            arr[index++] = points[i - 1].x.toFloat()
+            arr[index++] = points[i - 1].y.toFloat()
+            arr[index++] = points[i].x.toFloat()
+            arr[index++] = points[i].y.toFloat()
+        }
+        arr[index++] = points[points.size - 1].x.toFloat()
+        arr[index++] = points[points.size - 1].y.toFloat()
+        arr[index++] = points[0].x.toFloat()
+        arr[index] = points[0].y.toFloat()
+
+        paint.strokeWidth = 2f
+        canvas.drawLines(arr, paint)
+    }
+
+    fun drawCollisionBounds(particle: Particle, polygon: Polygon, canvas: Canvas) {
+        // Draw background
+        paint.setARGB(
+            particle.color.alpha.toInt(),
+            particle.color.red.toInt(),
+            particle.color.green.toInt(),
+            particle.color.blue.toInt()
+        )
+
+        drawShape(polygon.points, canvas)
     }
 
     fun drawParticle(particle: Particle, canvas: Canvas, context: Context) {
@@ -33,7 +66,6 @@ class ParticleRenderer {
             particle.color.green.toInt(),
             particle.color.blue.toInt()
         )
-
         canvas.drawRect(bounds, paint)
 
         // Draw image

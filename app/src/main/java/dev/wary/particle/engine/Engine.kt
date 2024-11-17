@@ -2,10 +2,13 @@ package dev.wary.particle.engine
 
 import android.content.Context
 import android.graphics.Canvas
+import dev.wary.geo.Point
 import dev.wary.geo.Polygon
 import dev.wary.geo.Rect
+import dev.wary.geo.convexHull
 import dev.wary.quadtree.QuadTree
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.sign
 
 enum class OverflowPolicy {
@@ -20,7 +23,7 @@ enum class OverflowPolicy {
 class ParticleEngine(
     initialState: List<Rect> = emptyList(),
     val renderer: ParticleRenderer = ParticleRenderer(),
-    val gravity: Double = 0.0,
+    //val gravity: Double = 0.0,
     val edgeCollisions: Boolean = true,
     val particleCollisions: Boolean = false,
     val maxCapacity: Int = 10_000,
@@ -31,114 +34,170 @@ class ParticleEngine(
     var quadTree = QuadTree<Particle>()
     var startIndex = 0
     var lastUpdateTime = 0L
+    val collisionBounds = mutableListOf<Polygon?>()
 
     init {
-        entities.addEntities(initialState)
-        if (particleCollisions) {
-            for (entity in initialState) {
-                if (entity is Particle) {
-                    quadTree.add(Polygon(entity.toPoints()), entity)
-                }
+        for (entity in initialState) {
+            entities.add(entity)
+        }
+
+        for (entity in initialState) {
+            if (entity is Particle) {
+                val polygon = entity.toPolygon()
+
+                quadTree.add(polygon, entity)
+                collisionBounds.add(polygon)
+            } else {
+                collisionBounds.add(null)
             }
         }
     }
 
-    fun onSizeChanged(width: Int, height: Int) {
+    fun sizeChanged(width: Int, height: Int) {
         bounds.width = width.toDouble()
         bounds.height = height.toDouble()
 
-        quadTree.width = bounds.width
-        quadTree.height = bounds.height
+        quadTree = QuadTree(bounds.width, bounds.height)
     }
 
-    fun onDraw(canvas: Canvas, context: Context) {
-        for (entity in entities) {
+    fun draw(canvas: Canvas, context: Context) {
+        for (i in entities.indices) {
+            val entity = entities[i]
             if (entity is Particle) {
-                renderer.drawParticle(entity, canvas, context)
+                if (DRAW_COLLISION_BOUNDS) {
+                    collisionBounds[i]?.let {
+                        renderer.drawCollisionBounds(entity, it, canvas)
+                    }
+                } else {
+                    renderer.drawParticle(entity, canvas, context)
+                }
             }
         }
         if (DEBUG) renderer.drawDebugInfo(canvas, this)
     }
 
-    fun onUpdate(currentTime: Long) {
+    fun update(currentTime: Long) {
         val elapsedTime = if (lastUpdateTime == 0L) 1 else currentTime - lastUpdateTime
         lastUpdateTime = currentTime
 
-        val newEntities = mutableListOf<Rect>()
-        val createdEntities = mutableListOf<Rect>()
+        val createdEntities = mutableMapOf<Rect, Polygon?>()
+        val updatedEntities = mutableMapOf<Rect, Polygon?>()
+
         for (i in entities.indices) {
             val entity = entities[i]
+            val oldPoints = entity.toPoints()
 
             if (entity is Particle) {
-                updateParticle(entity, elapsedTime)
-                if (entity.lifeSpan > 0) newEntities.add(entity)
+                if (entity.lifeSpan - elapsedTime > 0) {
+                    updatedEntities[entity] = Polygon(convexHull(oldPoints.plus(entity.newBounds(elapsedTime)).toMutableList()))
+                }
             } else {
-                newEntities.add(entity)
+                updatedEntities[entity] = null
             }
 
             if (entity is Emitter) {
-                repeat((entity.emitRate * elapsedTime).toInt()) {
-                    createdEntities.add(entity.emit())
+                repeat(ceil(entity.emitRate * elapsedTime).toInt()) {
+                    val particle = entity.emit()
+                    createdEntities[particle] = particle.toPolygon()
                 }
             }
         }
-        entities.clear()
-        entities.addEntities(newEntities)
-        entities.addEntities(createdEntities)
 
-        quadTree = QuadTree()
+        entities.clear()
+        collisionBounds.clear()
+        quadTree = QuadTree(width = bounds.width, height = bounds.height)
+        for (entry in updatedEntities) {
+            val entity = entry.key
+            val polygon = entry.value
+
+            if (entities.addEntity(entity)) {
+                collisionBounds.add(polygon)
+                if (entity is Particle) {
+                    quadTree.add(polygon!!, entity)
+                }
+            }
+        }
+        for (entry in createdEntities) {
+            val entity = entry.key
+            val polygon = entry.value
+
+            if (entities.addEntity(entity)) {
+                collisionBounds.add(polygon)
+                if (entity is Particle) {
+                    quadTree.add(Polygon(entity.toPoints()), entity)
+                }
+            }
+        }
+
+        val particleCollisions = quadTree.findAllOverlaps()
+
         for (entity in entities) {
             if (entity is Particle) {
-                quadTree.add(Polygon(entity.toPoints()), entity)
+                updateParticle(entity, elapsedTime, particleCollisions.getOrDefault(entity, emptyList()))
             }
         }
     }
 
-    private fun MutableList<Rect>.addEntities(newEntities: List<Rect>) {
-        for (entity in newEntities) {
-            if (this.size < maxCapacity) {
-                this.add(entity)
-            } else if (overflowPolicy == OverflowPolicy.REPLACE_OLDEST) {
-                this[startIndex++] = entity
-                if (startIndex >= this.size) startIndex = 0
-            } else if (overflowPolicy == OverflowPolicy.REPLACE_OLDEST_NON_EMITTER) {
-                var start = startIndex
-                while (this[start] is Emitter) {
-                    start++
-                    if (start >= this.size) start = 0
-                    if (start == startIndex) {
-                        return
-                    }
+    private fun MutableList<Rect>.addEntity(entity: Rect): Boolean {
+        if (this.size < maxCapacity) {
+            this.add(entity)
+        } else if (overflowPolicy == OverflowPolicy.REPLACE_OLDEST) {
+            this[startIndex++] = entity
+            if (startIndex >= this.size) startIndex = 0
+        } else if (overflowPolicy == OverflowPolicy.REPLACE_OLDEST_NON_EMITTER) {
+            var start = startIndex
+            while (this[start] is Emitter) {
+                start++
+                if (start >= this.size) start = 0
+                if (start == startIndex) {
+                    // All emitters so cannot replace
+                    return false
                 }
-                this[start++] = entity
-                startIndex = start
-                if (startIndex >= this.size) startIndex = 0
-            } else {
-                return
             }
+            this[start++] = entity
+            startIndex = start
+            if (startIndex >= this.size) startIndex = 0
+        } else {
+            // At capacity, do not create
+            return false
         }
+        return true
     }
 
-    private fun updateParticle(particle: Particle, elapsedTime: Long) {
-        handleCollisions(particle, elapsedTime)
+    private fun Particle.newBounds(elapsedTime: Long): List<Point> {
+        val result = mutableListOf<Point>()
+
+        val dx = velocity.x * elapsedTime + 0.5 * acceleration.x * elapsedTime * elapsedTime
+        val dy = velocity.y * elapsedTime + 0.5 * acceleration.y * elapsedTime * elapsedTime
+
+        return Rect(
+            left = left + dx,
+            top = top + dy,
+            width = width,
+            height = height
+        ).toPoints()
+    }
+
+    private fun updateParticle(particle: Particle, elapsedTime: Long, collisions: List<Particle>) {
+        handleCollisions(particle, elapsedTime, collisions)
 
         particle.lifeSpan -= elapsedTime
+
         particle.velocity.x += particle.acceleration.x * elapsedTime
-        particle.velocity.y += (gravity + particle.acceleration.y) * elapsedTime
+        particle.velocity.y += particle.acceleration.y * elapsedTime
 
         particle.color += particle.colorChange * elapsedTime
 
         particle.tint?.let {
             particle.tint = it + particle.tintChange * elapsedTime
         }
-
     }
 
-    private fun handleCollisions(particle: Particle, elapsedTime: Long) {
+    private fun handleCollisions(particle: Particle, elapsedTime: Long, collisions: List<Particle>) {
         var collisionHandled = false
 
         if (particleCollisions) {
-            collisionHandled = handleParticleCollisions(particle)
+            collisionHandled = handleParticleCollisions(particle, collisions)
         }
 
         if (edgeCollisions) {
@@ -147,38 +206,34 @@ class ParticleEngine(
         }
 
         if (!collisionHandled) {
-            val vxFrame = particle.velocity.x * elapsedTime
-            val vyFrame = particle.velocity.y * elapsedTime
+            val dx = particle.velocity.x * elapsedTime + 0.5 * particle.acceleration.x * elapsedTime * elapsedTime
+            val dy = particle.velocity.y * elapsedTime + 0.5 * particle.acceleration.y * elapsedTime * elapsedTime
 
-            particle.left += vxFrame
-            particle.top += vyFrame
+            particle.left += dx
+            particle.top += dy
         }
     }
 
-    private fun handleParticleCollisions(particle: Particle): Boolean {
-        val colliders = emptyList<Particle>() //quadTree.existingCollisions(particle)
-        if (colliders.isEmpty()) return false
+    private fun handleParticleCollisions(particle: Particle, collisions: List<Particle>): Boolean {
+        if (collisions.isEmpty()) return false
 
-        var dirXSum = particle.velocity.x.sign
-        var dirYSum = particle.velocity.y.sign
+        var dirXSum = 1.0
+        var dirYSum = 1.0
 
-        for (collider in colliders) {
-            dirXSum += collider.velocity.x.sign
-            dirYSum += collider.velocity.y.sign
+        for (collision in collisions) {
+            dirXSum *= collision.velocity.x.sign
+            dirYSum *= collision.velocity.y.sign
 
-            // TODO reorganize this callback
-            particle.onParticleCollision(particle, collider)
+            particle.onParticleCollision(particle, collision)
         }
 
-        val dirXAvg = dirXSum / (colliders.size + 1)
-        val dirYAvg = dirYSum / (colliders.size + 1)
+        val dirX = dirXSum / abs(dirXSum)
+        val dirY = dirYSum / abs(dirYSum)
 
-        val xs = if (dirXAvg * particle.velocity.x.sign < 1) -particle.velocity.x.sign else particle.velocity.x.sign
-        val ys = if (dirYAvg * particle.velocity.y.sign < 1) -particle.velocity.y.sign else particle.velocity.y.sign
-        particle.velocity.x *= xs
-        particle.acceleration.x = xs * abs(particle.acceleration.x)
-        particle.velocity.y *= ys
-        particle.acceleration.y = ys * abs(particle.acceleration.y)
+        particle.velocity.x *= dirX
+        particle.acceleration.x *= dirX
+        particle.velocity.y *= dirY
+        particle.acceleration.y *= dirY
 
         return false
     }
@@ -226,5 +281,6 @@ class ParticleEngine(
 
     companion object {
         const val DEBUG = true
+        const val DRAW_COLLISION_BOUNDS = false
     }
 }

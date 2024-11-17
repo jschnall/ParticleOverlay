@@ -81,7 +81,7 @@ fun buildEngine(entity: Rect): ParticleEngine {
     }
 
     return ParticleEngine(
-        gravity = 0.0002,
+        /*gravity = 0.0002,*/
         initialState = entities,
         edgeCollisions = false
     )
