@@ -7,8 +7,9 @@ open class Rect(var left: Double, var top: Double, var width: Double, var height
     val bottom: Double
         get() = top + height
 
+    // converts to list of counterClockwise points
     fun toPoints(): List<Point> {
-        return listOf(Point(left, top), Point(right, top), Point(right, bottom), Point(left, bottom))
+        return listOf(Point(left, top), Point(left, bottom), Point(right, bottom), Point(right, top))
     }
 
     fun toPolygon(): Polygon {

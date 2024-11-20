@@ -6,7 +6,7 @@ import dev.wary.geo.Point
 import dev.wary.geo.Polygon
 import dev.wary.geo.Rect
 import dev.wary.geo.convexHull
-import dev.wary.quadtree.QuadTree
+import dev.wary.data.quadtree.QuadTree
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.sign
@@ -284,6 +284,6 @@ class ParticleEngine(
 
     companion object {
         const val DEBUG = true
-        const val DRAW_COLLISION_BOUNDS = false
+        const val DRAW_COLLISION_BOUNDS = true
     }
 }

@@ -1,4 +1,4 @@
-package dev.wary.quadtree
+package dev.wary.data.quadtree
 
 import dev.wary.geo.Polygon
 import java.util.SortedSet
