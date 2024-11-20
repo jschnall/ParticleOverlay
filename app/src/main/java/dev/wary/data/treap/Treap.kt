@@ -1,15 +1,49 @@
 package dev.wary.data.treap
 
 /**
- * A tree obeying the min heap property
+ * A tree obeying the max heap property
  * Duplicate values are not allowed
  */
-open class Treap<T>(private val comparator: Comparator<T>) where T : Comparable<T> {
+open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparable<T> {
     constructor() : this(compareBy<T> { it })
+
+    fun minOrNull(): T? {
+        var prev: Node<T>? = null
+        var ptr = root
+
+        while (ptr != null) {
+            prev = ptr
+            ptr = ptr.left
+        }
+
+        return prev?.value
+    }
+
+    fun maxOrNull(): T? {
+        var prev: Node<T>? = null
+        var ptr = root
+
+        while (ptr != null) {
+            prev = ptr
+            ptr = ptr.right
+        }
+
+        return prev?.value
+    }
 
     fun clear() {
         count = 0
         root = null
+    }
+
+    private fun split(value: T): SplitResult<T> {
+        upsert(value, Integer.MAX_VALUE, true)
+
+        return SplitResult(root?.left, root, root?.right)
+    }
+
+    private fun join() {
+        // TODO
     }
 
     private fun deleteLeafNode(parent: Node<T>?, node: Node<T>) {
@@ -68,7 +102,7 @@ open class Treap<T>(private val comparator: Comparator<T>) where T : Comparable<
 
         // Two children
         do {
-            if (node.left!!.priority < node.right!!.priority) {
+            if (node.left!!.priority > node.right!!.priority) {
                 rotateLeft(node)
             } else {
                 rotateRight(node)
@@ -79,32 +113,40 @@ open class Treap<T>(private val comparator: Comparator<T>) where T : Comparable<
         return true
     }
 
+    fun insert(value: T): Boolean {
+        return upsert(value = value)
+    }
+
     /**
      * Existing value that compares as equal is replaced,
      * otherwise inserts the new value
      * Returns true if a new value was inserted
      */
-    fun upsert(value: T, replace: Boolean = false): Boolean {
+    private fun upsert(value: T, priority: Int = value.hashCode(), replace: Boolean = false): Boolean {
         val (parent, node) = search(root, value)
 
         if (node != null) {
             if (!replace) return false
 
-            // Replace existing node
-            val newNode = node.copy(value = value).apply {
-                left = node.left
-                right = node.right
-            }
-
-            if (parent == null) {
-                root = newNode
-            } else {
-                val comparison = comparator.compare(value, parent.value)
-                if (comparison < 0) {
-                    parent.left = newNode
-                } else {
-                    parent.right = newNode
+            if (priority == node.priority) {
+                // Replace existing node
+                val newNode = node.copy(value = value).apply {
+                    left = node.left
+                    right = node.right
                 }
+
+                if (parent == null) {
+                    root = newNode
+                } else {
+                    if (comparator.compare(value, parent.value) < 0) {
+                        parent.left = newNode
+                    } else {
+                        parent.right = newNode
+                    }
+                }
+            } else {
+                delete(value)
+                upsert(value, priority, true)
             }
 
             return false
@@ -116,16 +158,14 @@ open class Treap<T>(private val comparator: Comparator<T>) where T : Comparable<
         if (parent == null) {
             root = newNode
         } else {
-            val comparison = comparator.compare(value, parent.value)
-
-            if (comparison < 0) {
+            if (comparator.compare(value, parent.value) < 0) {
                 parent.left = newNode
-                if (newNode.priority < parent.priority) {
+                if (newNode.priority > parent.priority) {
                     rotateRight(parent)
                 }
             } else {
                 parent.right = newNode
-                if (newNode.priority < parent.priority) {
+                if (newNode.priority > parent.priority) {
                     rotateLeft(parent)
                 }
             }
@@ -212,7 +252,8 @@ open class Treap<T>(private val comparator: Comparator<T>) where T : Comparable<
         }
     }
 
-    inner class Iterator: MutableIterator<T> {
+    // TODO add descending iterator by pushing all right first
+    inner class Iterator(isDescending: Boolean): MutableIterator<T> {
         private val stack = ArrayDeque<Node<T>>()
         var prev: Node<T>? = null
 
@@ -252,6 +293,8 @@ open class Treap<T>(private val comparator: Comparator<T>) where T : Comparable<
         }
     }
 
+    class SplitResult<T>(lesser: Node<T>?, pivot: Node<T>?, greater: Node<T>?)
+
     data class Node<T>(val value: T, val priority: Int = value.hashCode()) {
         var left: Node<T>? = null
         var right: Node<T>? = null
@@ -263,15 +306,15 @@ fun main() {
 
     assert(!treap.search(100))
     for (i in 0..10_000) {
-        assert(treap.upsert(i))
+        assert(treap.insert(i))
     }
-    assert(!treap.upsert(100))
+    assert(!treap.insert(100))
     for (i in 0..5000) {
         assert(treap.delete(i))
     }
     assert(!treap.search(100))
     for (i in 5000 downTo 0) {
-        assert(treap.upsert(i))
+        assert(treap.insert(i))
     }
     assert(treap.search(100))
 }

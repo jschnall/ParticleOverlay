@@ -2,8 +2,9 @@ package dev.wary.data.treap
 
 import java.util.SortedSet
 
+
 class TreapSet<V>(comparator: Comparator<V>? = null) : Treap<V>(
-    comparator ?: compareBy { it }), SortedSet<V> where V : Comparable<V> {
+    comparator ?: compareBy { it }), SortedSet<V> where V : Any, V : Comparable<V> {
 
     override fun add(element: V): Boolean {
         return upsert(element)
@@ -32,19 +33,25 @@ class TreapSet<V>(comparator: Comparator<V>? = null) : Treap<V>(
     }
 
     override fun isEmpty(): Boolean {
-        TODO("Not yet implemented")
+        return size == 0
     }
 
     override fun comparator(): java.util.Comparator<in V> {
-        TODO("Not yet implemented")
+        return comparator
     }
 
     override fun first(): V {
-        TODO("Not yet implemented")
+        minOrNull()?.let {
+            return it
+        }
+        throw NoSuchElementException("Set is empty")
     }
 
     override fun last(): V {
-        TODO("Not yet implemented")
+        maxOrNull()?.let {
+            return it
+        }
+        throw NoSuchElementException("Set is empty")
     }
 
     override fun tailSet(fromElement: V): SortedSet<V> {
@@ -60,7 +67,10 @@ class TreapSet<V>(comparator: Comparator<V>? = null) : Treap<V>(
     }
 
     override fun containsAll(elements: Collection<V>): Boolean {
-        TODO("Not yet implemented")
+        for (element in elements) {
+            if (!contains(element)) return false
+        }
+        return true
     }
 
     override fun retainAll(elements: Collection<V>): Boolean {
@@ -68,7 +78,13 @@ class TreapSet<V>(comparator: Comparator<V>? = null) : Treap<V>(
     }
 
     override fun removeAll(elements: Collection<V>): Boolean {
-        TODO("Not yet implemented")
+        val oldSize = size
+
+        for (element in elements) {
+            remove(element)
+        }
+
+        return oldSize != size
     }
 
 }
