@@ -1,37 +1,95 @@
 package dev.wary.data.treap
 
+import kotlin.jvm.Throws
+
+interface Treap<T : Comparable<T>> {
+    fun subTreap(fromInclusive: T? = null, toExclusive: T? = null): Treap<T>
+    fun intersect(elements: Collection<T>): Boolean
+    // TODO
+    // fun union(elements: Collection<T>): Boolean
+    fun minOrNull(): T?
+    fun maxOrNull(): T?
+    fun clear()
+    fun delete(value: T): Boolean
+    fun insert(value: T): Boolean
+    fun insertAll(elements: Collection<T>): Boolean
+    fun find(value: T): Boolean
+
+    val size: Int
+}
+
+class DelegateTreap<T : Comparable<T>>(
+    private val treap: Treap<T>,
+    private val fromInclusive: T?,
+    private val toExclusive: T?
+): Treap<T> by treap {
+    override fun insert(value: T): Boolean {
+        if ((fromInclusive != null && value < fromInclusive) ||
+            (toExclusive != null && value >= toExclusive)) {
+            throw IllegalArgumentException("Cannot insert outside range.")
+        }
+        return treap.insert(value)
+    }
+
+
+}
+
 /**
  * A tree obeying the max heap property
  * Duplicate values are not allowed
  */
-open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparable<T> {
-    constructor() : this(compareBy<T> { it })
+open class BaseTreap<T : Comparable<T>>(
+    protected val comparator: Comparator<T> = compareBy { it }
+) : Treap<T> {
 
-    fun minOrNull(): T? {
-        var prev: Node<T>? = null
+    /**
+     * Creates a tree backed by this tree's data
+     * subtreap size is lazy loaded for perf
+     * Returns a subtree backed by this one
+     */
+    override fun subTreap(fromInclusive: T?, toExclusive: T?): Treap<T> {
+        return DelegateTreap(this, fromInclusive, toExclusive)
+    }
+
+    override fun intersect(elements: Collection<T>): Boolean {
+        val newTreap = BaseTreap(comparator)
+
+        for (element in elements) {
+            if (find(element)) {
+                newTreap.insert(element)
+            }
+        }
+
+        if (newTreap.count != count) {
+            count = newTreap.count
+            root = newTreap.root
+            return true
+        }
+
+        return false
+    }
+
+    override fun minOrNull(): T? {
         var ptr = root
 
-        while (ptr != null) {
-            prev = ptr
+        while (ptr?.left != null) {
             ptr = ptr.left
         }
 
-        return prev?.value
+        return ptr?.value
     }
 
-    fun maxOrNull(): T? {
-        var prev: Node<T>? = null
+    override fun maxOrNull(): T? {
         var ptr = root
 
-        while (ptr != null) {
-            prev = ptr
+        while (ptr?.right != null) {
             ptr = ptr.right
         }
 
-        return prev?.value
+        return ptr?.value
     }
 
-    fun clear() {
+    override fun clear() {
         count = 0
         root = null
     }
@@ -42,7 +100,7 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
         return SplitResult(root?.left, root, root?.right)
     }
 
-    private fun join() {
+    private fun join(splitResult: SplitResult<T>) {
         // TODO
     }
 
@@ -59,7 +117,7 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
         }
     }
 
-    fun delete(value: T): Boolean {
+    override fun delete(value: T): Boolean {
         val (parent, node) = search(root, value)
 
         // Value not found
@@ -113,8 +171,18 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
         return true
     }
 
-    fun insert(value: T): Boolean {
+    override fun insert(value: T): Boolean {
         return upsert(value = value)
+    }
+
+    override fun insertAll(elements: Collection<T>): Boolean {
+        val oldSize = size
+
+        for (element in elements) {
+            insert(element)
+        }
+
+        return oldSize != size
     }
 
     /**
@@ -176,14 +244,14 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
         return true
     }
 
-    fun search(value: T): Boolean {
+    override fun find(value: T): Boolean {
         return search(root, value).second != null
     }
 
     /**
      * returns (parent, node)
      */
-    private fun search(root: Node<T>?, value: T): Pair<Node<T>?, Node<T>?> {
+    protected fun search(root: Node<T>?, value: T): Pair<Node<T>?, Node<T>?> {
         var prev: Node<T>? = null
         var ptr = root
 
@@ -204,6 +272,8 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
     }
 
     /**
+     * Standard AVL Left Rotate:
+     *
      *      root                       R
      *      / \      Left Rotate      / \
      *     L   R        ———>      root   Y
@@ -223,6 +293,8 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
     }
 
     /**
+     * Standard AVL Right Rotate:
+     *
      *            root                      L
      *            / \     Right Rotate     / \
      *           L   R        ———>        X   root
@@ -239,26 +311,53 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
         return l
     }
 
-    val size: Int
-        get() = count
+    /**
+     * Performs DFS traversal of tree
+     * Returns the number of nodes in the tree
+     */
+    private fun countNodes(root: Node<T>?): Int {
+        if (root == null) return 0
 
-    private var count: Int = 0
-    private var root: Node<T>? = null
+        var count = 0
+        val stack = ArrayDeque<Node<T>>()
+        stack.addFirst(root)
+
+        while (stack.isNotEmpty()) {
+            val node = stack.removeFirst()
+            count++
+            node.left?.let { stack.addFirst(it) }
+            node.right?.let { stack.addFirst(it) }
+        }
+
+        return count
+    }
+
+    override val size: Int
+        get() {
+            if (count < 0) {
+                count = countNodes(root)
+            }
+            return count
+        }
+
+    private var count: Int = -1
+    protected var root: Node<T>? = null
 
     companion object {
-        fun <T : Comparable<T>> fromSorted(list: List<T>): Treap<T> {
-            // TODO
-            return Treap()
+        fun <T : Comparable<T>> from(
+            elements: Collection<T>,
+            comparator: Comparator<T> = compareBy { it }
+        ): Treap<T> {
+            return BaseTreap(comparator).apply { insertAll(elements) }
         }
     }
 
-    // TODO add descending iterator by pushing all right first
-    inner class Iterator(isDescending: Boolean): MutableIterator<T> {
+    inner class Iterator(val isDescending: Boolean): MutableIterator<T> {
         private val stack = ArrayDeque<Node<T>>()
-        var prev: Node<T>? = null
+        var current: Node<T>? = null
 
         init {
-            pushAllLeft(root)
+            if (isDescending) pushAllRight(root) else pushAllLeft(root)
         }
 
         override fun hasNext(): Boolean {
@@ -266,20 +365,27 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
         }
 
         override fun next(): T {
-            prev = stack.removeFirst()
+            current = stack.removeFirst()
 
-            prev!!.right?.let {
-                pushAllLeft(it)
+            if (isDescending) {
+                current!!.left?.let {
+                    pushAllRight(root)
+                }
+            } else {
+                current!!.right?.let {
+                    pushAllLeft(root)
+                }
             }
 
-            return prev!!.value
+            return current!!.value
         }
 
-        // TODO: Since we already have the node to delete, can we make this O(1)?
-        // May require a parent ptr in the Node class. If parent is saved on the stack,
+        // TODO test this. Make sure rotations during deletion don't screw up iteration order
+        // TODO: Since we already have the node to delete, can we make this O(1) or
+        // will that require a parent ptr in the Node class? If parent is saved on the stack,
         // that node may have been deleted and the parent changed.
         override fun remove() {
-            prev?.let {
+            current?.let {
                 delete(it.value)
             }
         }
@@ -289,6 +395,14 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
             while (ptr != null) {
                 stack.addFirst(ptr)
                 ptr = ptr.left
+            }
+        }
+
+        private fun pushAllRight(root: Node<T>?) {
+            var ptr = root
+            while (ptr != null) {
+                stack.addFirst(ptr)
+                ptr = ptr.right
             }
         }
     }
@@ -302,9 +416,9 @@ open class Treap<T>(protected val comparator: Comparator<T>) where T : Comparabl
 }
 
 fun main() {
-    val treap = Treap<Int>()
+    val treap = BaseTreap<Int>()
 
-    assert(!treap.search(100))
+    assert(!treap.find(100))
     for (i in 0..10_000) {
         assert(treap.insert(i))
     }
@@ -312,9 +426,9 @@ fun main() {
     for (i in 0..5000) {
         assert(treap.delete(i))
     }
-    assert(!treap.search(100))
+    assert(!treap.find(100))
     for (i in 5000 downTo 0) {
         assert(treap.insert(i))
     }
-    assert(treap.search(100))
+    assert(treap.find(100))
 }

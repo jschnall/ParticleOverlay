@@ -3,29 +3,23 @@ package dev.wary.data.treap
 import java.util.SortedSet
 
 
-class TreapSet<V>(comparator: Comparator<V>? = null) : Treap<V>(
+class TreapSet<V>(comparator: Comparator<V>? = null) : BaseTreap<V>(
     comparator ?: compareBy { it }), SortedSet<V> where V : Any, V : Comparable<V> {
 
     override fun add(element: V): Boolean {
-        return upsert(element)
+        return insert(element)
     }
 
     override fun addAll(elements: Collection<V>): Boolean {
-        val oldSize = size
-
-        for (element in elements) {
-            upsert(element)
-        }
-
-        return oldSize != size
+        return insertAll(elements)
     }
 
     override fun iterator(): MutableIterator<V> {
-        return this.Iterator()
+        return this.Iterator(false)
     }
 
     override fun contains(element: V): Boolean {
-        return search(element)
+        return find(element)
     }
 
     override fun remove(element: V): Boolean {
@@ -56,6 +50,7 @@ class TreapSet<V>(comparator: Comparator<V>? = null) : Treap<V>(
 
     override fun tailSet(fromElement: V): SortedSet<V> {
         TODO("Not yet implemented")
+        // return subTreap(fromInclusive = fromElement)
     }
 
     override fun headSet(toElement: V): SortedSet<V> {
@@ -74,7 +69,7 @@ class TreapSet<V>(comparator: Comparator<V>? = null) : Treap<V>(
     }
 
     override fun retainAll(elements: Collection<V>): Boolean {
-        TODO("Not yet implemented")
+        return intersect(elements)
     }
 
     override fun removeAll(elements: Collection<V>): Boolean {
