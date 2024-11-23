@@ -1,20 +1,17 @@
 package dev.wary.data.treap
 
-import kotlin.jvm.Throws
-
 interface Treap<T : Comparable<T>> {
     fun subTreap(fromInclusive: T? = null, toExclusive: T? = null): Treap<T>
-    fun intersect(elements: Collection<T>): Boolean
-    // TODO
-    // fun union(elements: Collection<T>): Boolean
-    fun minOrNull(): T?
-    fun maxOrNull(): T?
+    fun minOrNull(floor: T? = null): T?
+    fun maxOrNull(ceil: T? = null): T?
     fun clear()
+    // fun intersect(treap : Treap<T>): Treap<T>
+    // fun union(treap: Treap<T>): Treap<T>
     fun delete(value: T): Boolean
     fun insert(value: T): Boolean
-    fun insertAll(elements: Collection<T>): Boolean
     fun find(value: T): Boolean
 
+    val comparator: Comparator<T>
     val size: Int
 }
 
@@ -22,16 +19,67 @@ class DelegateTreap<T : Comparable<T>>(
     private val treap: Treap<T>,
     private val fromInclusive: T?,
     private val toExclusive: T?
-): Treap<T> by treap {
+): Treap<T> {
+    override val comparator: Comparator<T>
+        get() = treap.comparator
+
+    override val size: Int
+        get() = TODO("Not yet implemented")
+
+    override fun subTreap(fromInclusive: T?, toExclusive: T?): Treap<T> {
+        if (comparator.compare(fromInclusive, toExclusive) > 0 ||
+            (this.fromInclusive != null && comparator.compare(fromInclusive, this.fromInclusive) < 0) ||
+            (this.toExclusive != null && comparator.compare(this.toExclusive, toExclusive) > 0))
+        throw IllegalArgumentException("Invalid range")
+
+        return DelegateTreap(
+            treap,
+            fromInclusive ?: this.fromInclusive,
+            toExclusive ?: this.toExclusive
+        )
+    }
+
+    override fun minOrNull(floor: T?): T? {
+        if (comparator.compare(floor, fromInclusive) >= 0) {
+            return treap.minOrNull(floor)
+        }
+        return treap.minOrNull(fromInclusive)
+    }
+
+    override fun maxOrNull(ceil: T?): T? {
+        if (comparator.compare(ceil, fromInclusive) < 0) {
+            return treap.maxOrNull(ceil)
+        }
+        return treap.maxOrNull(toExclusive)
+    }
+
+    override fun clear() {
+        throw UnsupportedOperationException("Cannot delete outside range.")
+    }
+
+    override fun delete(value: T): Boolean {
+        if ((fromInclusive != null && comparator.compare(value, fromInclusive) < 0) ||
+            (toExclusive != null && comparator.compare(value, toExclusive) >= 0)) {
+            throw IllegalArgumentException("Cannot delete outside range.")
+        }
+        return treap.insert(value)
+    }
+
     override fun insert(value: T): Boolean {
-        if ((fromInclusive != null && value < fromInclusive) ||
-            (toExclusive != null && value >= toExclusive)) {
+        if ((fromInclusive != null && comparator.compare(value, fromInclusive) < 0) ||
+            (toExclusive != null && comparator.compare(value, toExclusive) >= 0)) {
             throw IllegalArgumentException("Cannot insert outside range.")
         }
         return treap.insert(value)
     }
 
-
+    override fun find(value: T): Boolean {
+        if ((fromInclusive != null && comparator.compare(value, fromInclusive) < 0) ||
+            (toExclusive != null && comparator.compare(value, toExclusive) >= 0)) {
+            return false
+        }
+        return treap.find(value)
+    }
 }
 
 /**
@@ -39,8 +87,11 @@ class DelegateTreap<T : Comparable<T>>(
  * Duplicate values are not allowed
  */
 open class BaseTreap<T : Comparable<T>>(
-    protected val comparator: Comparator<T> = compareBy { it }
+    override val comparator: Comparator<T> = compareBy { it }
 ) : Treap<T> {
+    constructor(treap: Treap<T>): this(treap.comparator) {
+        // TODO
+    }
 
     /**
      * Creates a tree backed by this tree's data
@@ -48,41 +99,27 @@ open class BaseTreap<T : Comparable<T>>(
      * Returns a subtree backed by this one
      */
     override fun subTreap(fromInclusive: T?, toExclusive: T?): Treap<T> {
+        if (comparator.compare(fromInclusive, toExclusive) > 0)
+            throw IllegalArgumentException("Invalid range")
         return DelegateTreap(this, fromInclusive, toExclusive)
     }
 
-    override fun intersect(elements: Collection<T>): Boolean {
-        val newTreap = BaseTreap(comparator)
-
-        for (element in elements) {
-            if (find(element)) {
-                newTreap.insert(element)
-            }
-        }
-
-        if (newTreap.count != count) {
-            count = newTreap.count
-            root = newTreap.root
-            return true
-        }
-
-        return false
-    }
-
-    override fun minOrNull(): T? {
+    override fun minOrNull(floor: T?): T? {
         var ptr = root
 
-        while (ptr?.left != null) {
+        while (ptr?.left != null &&
+            (floor == null || comparator.compare(ptr.left!!.value, floor) >= 0)) {
             ptr = ptr.left
         }
 
         return ptr?.value
     }
 
-    override fun maxOrNull(): T? {
+    override fun maxOrNull(ceil: T?): T? {
         var ptr = root
 
-        while (ptr?.right != null) {
+        while (ptr?.right != null &&
+            (ceil == null || comparator.compare(ptr.right!!.value, ceil) < 0)) {
             ptr = ptr.right
         }
 
@@ -102,6 +139,46 @@ open class BaseTreap<T : Comparable<T>>(
 
     private fun join(splitResult: SplitResult<T>) {
         // TODO
+    }
+
+    public fun union(elements: Collection<T>): BaseTreap<T> {
+        val treap = BaseTreap(this)
+
+        for (element in elements) {
+            treap
+        }
+    }
+
+    /**
+     * Finds the interesction of this treap and elements
+     * returns the interesction as a new treap
+     */
+    public fun intersect(elements: Collection<T>): BaseTreap<T> {
+        val treap = BaseTreap(comparator)
+
+        for (element in elements) {
+            if (find(element)) {
+                treap.insert(element)
+            }
+        }
+
+        return treap
+    }
+
+    /**
+     * Replaces this treap with the interesction of it and elements
+     * returns whether this treap has changed
+     */
+    fun toIntersect(elements: Collection<T>): Boolean {
+        val treap = intersect(elements)
+
+        if (treap.size != count) {
+            count = treap.size
+            root = treap.root
+            return true
+        }
+
+        return false
     }
 
     private fun deleteLeafNode(parent: Node<T>?, node: Node<T>) {
@@ -173,16 +250,6 @@ open class BaseTreap<T : Comparable<T>>(
 
     override fun insert(value: T): Boolean {
         return upsert(value = value)
-    }
-
-    override fun insertAll(elements: Collection<T>): Boolean {
-        val oldSize = size
-
-        for (element in elements) {
-            insert(element)
-        }
-
-        return oldSize != size
     }
 
     /**
@@ -348,11 +415,19 @@ open class BaseTreap<T : Comparable<T>>(
             elements: Collection<T>,
             comparator: Comparator<T> = compareBy { it }
         ): Treap<T> {
-            return BaseTreap(comparator).apply { insertAll(elements) }
+            return BaseTreap(comparator).apply {
+                for (element in elements) {
+                    insert(element)
+                }
+            }
         }
     }
 
-    inner class Iterator(val isDescending: Boolean): MutableIterator<T> {
+    inner class Iterator(
+        val isDescending: Boolean,
+        val fromInclusive: T? = null,
+        val toExclusive: T? = null
+    ): MutableIterator<T> {
         private val stack = ArrayDeque<Node<T>>()
         var current: Node<T>? = null
 
@@ -392,7 +467,8 @@ open class BaseTreap<T : Comparable<T>>(
 
         private fun pushAllLeft(root: Node<T>?) {
             var ptr = root
-            while (ptr != null) {
+            while (ptr != null &&
+                (fromInclusive == null || comparator.compare(fromInclusive, ptr.value) <= 0)) {
                 stack.addFirst(ptr)
                 ptr = ptr.left
             }
@@ -400,7 +476,7 @@ open class BaseTreap<T : Comparable<T>>(
 
         private fun pushAllRight(root: Node<T>?) {
             var ptr = root
-            while (ptr != null) {
+            while (ptr != null && comparator.compare(ptr.value, toExclusive) < 0) {
                 stack.addFirst(ptr)
                 ptr = ptr.right
             }
