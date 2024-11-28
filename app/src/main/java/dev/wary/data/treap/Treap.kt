@@ -290,58 +290,61 @@ open class TreapSet<T : Comparable<T>>(
         count--
 
         // Two children
-        var ptr: Node<T> = node
         var prev = parent
+        var ptr: Node<T> = node
         while (ptr.left != null && ptr.right != null) {
             if (ptr.left!!.priority > ptr.right!!.priority) {
                 if (prev == null) {
                     root = rotateRight(ptr)
                     prev = root
                 } else {
-                    if (comparator.compare(value, prev.value) < 0) prev.left = rotateRight(ptr) else prev.right = rotateRight(ptr)
-                    prev = ptr
+                    if (comparator.compare(ptr.value, prev.value) < 0) {
+                        prev.left = rotateRight(ptr)
+                        prev = prev.left
+                    } else {
+                        prev.right = rotateRight(ptr)
+                        prev = prev.right
+                    }
                 }
-                ptr = ptr.right!!
             } else {
                 if (prev == null) {
                     root = rotateLeft(ptr)
                     prev = root
                 } else {
-                    if (comparator.compare(value, prev.value) < 0) prev.left = rotateLeft(ptr) else prev.right = rotateLeft(ptr)
-                    prev = ptr
+                    if (comparator.compare(ptr.value, prev.value) < 0) {
+                        prev.left = rotateLeft(ptr)
+                        prev = prev.left
+                    } else {
+                        prev.right = rotateLeft(ptr)
+                        prev = prev.right
+                    }
                 }
-                ptr = ptr.left!!
             }
         }
 
-        // Only left child
-        if (node.right == null) {
+        if (ptr.left == null && ptr.right == null) {
+            // Leaf node
+            deleteLeafNode(prev, ptr)
+        } else if (ptr.right == null) {
+            // Only left child
             if (prev == null) {
-                root = node.left
-            } else if (comparator.compare(value, prev.value) < 0) {
-                prev.left = node.left
+                root = ptr.left
+            } else if (comparator.compare(ptr.value, prev.value) < 0) {
+                prev.left = ptr.left
             } else {
-                prev.right = node.left
+                prev.right = ptr.left
             }
-
-            return true
-        }
-
-        // Only right child
-        if (node.left == null) {
+        } else {
+            // Only right child
             if (prev == null) {
-                root = node.right
-            } else if (comparator.compare(value, prev.value) < 0) {
-                prev.left = node.right
+                root = ptr.right
+            } else if (comparator.compare(ptr.value, prev.value) < 0) {
+                prev.left = ptr.right
             } else {
-                prev.right = node.right
+                prev.right = ptr.right
             }
-
-            return true
         }
 
-        // Leaf node
-        deleteLeafNode(prev, node)
         return true
     }
 
@@ -565,8 +568,8 @@ open class TreapSet<T : Comparable<T>>(
 
 
 fun main() {
-//    testDelete()
-    testIterator()
+    testDelete()
+//    testIterator()
 //    testIterator(isDescending)
 }
 
@@ -576,6 +579,7 @@ fun testDelete() {
     for (i in 1 .. 10) {
         treap.insert(i)
     }
+
     treap.delete(5)
     treap.delete(5)
     treap.delete(1)
