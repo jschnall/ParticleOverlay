@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import dev.wary.particle.ui.compose.CollisionScreen
 import dev.wary.particle.ui.compose.LineEmitterScreen
+import dev.wary.particle.ui.compose.NoEmitterScreen
 import dev.wary.particle.ui.compose.ParticleEmitterScreen
 import dev.wary.particle.ui.compose.PointEmitterScreen
 import dev.wary.particle.ui.theme.MyApplicationTheme
@@ -17,10 +18,11 @@ class ComposeActivity : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
-                 // PointEmitterScreen()
-                 // LineEmitterScreen()
-                 // ParticleEmitterScreen()
-                 CollisionScreen()
+                // NoEmitterScreen()
+                // PointEmitterScreen()
+                // LineEmitterScreen()
+                // ParticleEmitterScreen()
+                CollisionScreen()
             }
         }
     }

@@ -26,7 +26,7 @@ class ParticleEngine(
     // val gravity: Double = 0.0,
     val edgeCollisions: Boolean = true,
     val particleCollisions: Boolean = false,
-    val maxCapacity: Int = 10_000,
+    val maxCapacity: Int = 5_000,
     val overflowPolicy: OverflowPolicy = OverflowPolicy.DO_NOT_CREATE
 ) {
     val bounds = Rect(0.0, 0.0, 0.0, 0.0)
@@ -284,6 +284,6 @@ class ParticleEngine(
 
     companion object {
         const val DEBUG = true
-        const val DRAW_COLLISION_BOUNDS = true
+        const val DRAW_COLLISION_BOUNDS = false
     }
 }
