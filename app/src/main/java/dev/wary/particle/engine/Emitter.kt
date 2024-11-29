@@ -1,5 +1,7 @@
 package dev.wary.particle.engine
 
+import dev.wary.geo.Point
+import dev.wary.geo.Rect
 import kotlin.math.abs
 import kotlin.random.Random
 

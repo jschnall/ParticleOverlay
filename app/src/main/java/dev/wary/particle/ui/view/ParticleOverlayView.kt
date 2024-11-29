@@ -51,7 +51,7 @@ class ParticleOverlayView(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        engine?.onDraw(canvas, context)
+        engine?.draw(canvas, context)
     }
 
     fun start() {
@@ -76,7 +76,7 @@ class ParticleOverlayView(
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val updateCallback = object : Runnable {
         override fun run() {
-            engine?.onUpdate(clock.millis())
+            engine?.update(clock.millis())
             invalidate()
             handler.postDelayed(this, DELAY_MILLIS)
         }

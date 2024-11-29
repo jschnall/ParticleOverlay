@@ -9,21 +9,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import dev.wary.particle.engine.DoubleColor
 import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.ParticleParams
-import dev.wary.particle.engine.Point
 import dev.wary.particle.engine.PointEmitter
 import dev.wary.particle.engine.DoubleRangeParam
 import dev.wary.particle.engine.ExactParam
 import dev.wary.particle.engine.LongRangeParam
-import dev.wary.particle.engine.OnParticleCollision
 import dev.wary.particle.engine.OverflowPolicy
 import dev.wary.particle.engine.RangedParticleBuilder
-import dev.wary.particle.engine.Rect
+import dev.wary.geo.Point
+import dev.wary.geo.Rect
 import dev.wary.particle.engine.listParamOf
 import dev.wary.particle.engine.toDoubleColor
 
@@ -49,9 +47,9 @@ fun CollisionScreen(modifier: Modifier = Modifier) {
 fun buildPointEmitter(): PointEmitter {
     val builder = RangedParticleBuilder(
         ParticleParams(
-            lifeSpan = LongRangeParam(1_000, 7_000),
-            width = ExactParam(16.0),
-            height = ExactParam(16.0),
+            lifeSpan = LongRangeParam(1_000, 25_000),
+            width = ExactParam(8.0),
+            height = ExactParam(8.0),
             vx = DoubleRangeParam(0.2, 0.4),
             vy = DoubleRangeParam(-0.4, 0.4),
             ax = ExactParam(0.0),
@@ -59,7 +57,7 @@ fun buildPointEmitter(): PointEmitter {
             color = listParamOf(
                 Color.GREEN.toDoubleColor(),
             ),
-            colorChange = ExactParam(DoubleColor(0.0, -0.1, 0.2, -0.2)),
+            colorChange = ExactParam(DoubleColor(-0.02, -0.1, 0.2, -0.2)),
             onEdgeCollision = listParamOf({ particle -> particle.color = Color.RED.toDoubleColor() }),
             onParticleCollision = ExactParam({ particle, other -> particle.color.blue = 255.0  })
         )
@@ -74,9 +72,9 @@ fun buildMyEngine(entity: Rect): ParticleEngine {
 
     return ParticleEngine(
         initialState = entities,
-        maxCapacity = 500,
+        maxCapacity = 1000,
         edgeCollisions = true,
         particleCollisions = true,
-        overflowPolicy = OverflowPolicy.REPLACE_OLDEST_NON_EMITTER,
+        overflowPolicy = OverflowPolicy.DO_NOT_CREATE,
     )
 }

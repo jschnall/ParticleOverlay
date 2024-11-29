@@ -26,9 +26,9 @@ import dev.wary.particle.engine.DoubleColor
 import dev.wary.particle.engine.LineEmitter
 import dev.wary.particle.engine.Particle
 import dev.wary.particle.engine.ParticleEngine
-import dev.wary.particle.engine.Point
-import dev.wary.particle.engine.Rect
 import dev.wary.particle.engine.TemplateParticleBuilder
+import dev.wary.geo.Point
+import dev.wary.geo.Rect
 import dev.wary.particle.ui.theme.MyApplicationTheme
 
 @Composable
@@ -81,7 +81,7 @@ fun buildEngine(entity: Rect): ParticleEngine {
     }
 
     return ParticleEngine(
-        gravity = 0.0002,
+        /*gravity = 0.0002,*/
         initialState = entities,
         edgeCollisions = false
     )

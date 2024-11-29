@@ -23,7 +23,7 @@ fun ParticleOverlay(modifier: Modifier = Modifier, engine: MutableState<Particle
     LaunchedEffect(Unit) {
         while (true) {
             withFrameMillis { currentTime ->
-                engine.value.onUpdate(currentTime)
+                engine.value.update(currentTime)
                 engine.value = engine.value
             }
         }
@@ -35,11 +35,11 @@ fun ParticleOverlay(modifier: Modifier = Modifier, engine: MutableState<Particle
             .fillMaxSize()
             .clipToBounds()
             .onSizeChanged { size ->
-                engine.value.onSizeChanged(size.width, size.height)
+                engine.value.sizeChanged(size.width, size.height)
             },
         onDraw = {
             drawIntoCanvas { canvas ->
-                engine.value.onDraw(canvas.nativeCanvas, context)
+                engine.value.draw(canvas.nativeCanvas, context)
             }
         }
     )

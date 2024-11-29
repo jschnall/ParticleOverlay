@@ -13,11 +13,12 @@ import dev.wary.particle.engine.LineEmitter
 import dev.wary.particle.engine.LongRangeParam
 import dev.wary.particle.engine.ParticleEngine
 import dev.wary.particle.engine.ParticleParams
-import dev.wary.particle.engine.Point
 import dev.wary.particle.engine.RangedParticleBuilder
-import dev.wary.particle.engine.Rect
+import dev.wary.geo.Point
+import dev.wary.geo.Rect
 import dev.wary.particle.engine.listParamOf
 import dev.wary.particle.engine.toDoubleColor
+import dev.wary.particle.ui.compose.buildEngine
 import dev.wary.particle.ui.view.ParticleOverlayView
 
 class ViewActivity : ComponentActivity() {
@@ -81,6 +82,6 @@ class ViewActivity : ComponentActivity() {
             add(entity)
         }
 
-        return ParticleEngine(gravity = 0.0005, initialState = entities, edgeCollisions = false)
+        return ParticleEngine(/*gravity = 0.0005,*/ initialState = entities, edgeCollisions = false)
     }
 }
