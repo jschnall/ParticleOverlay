@@ -16,40 +16,40 @@ fun testFind() {
     val treap = TreapSet<Int>()
 
     println(treap.size)
-    println (treap.find(40_000))
+    println (treap.contains(40_000))
     for (i in 1 .. 100_000) {
-        treap.insert(i)
+        treap.add(i)
     }
     println(treap.size)
-    println (treap.find(40_000))
+    println (treap.contains(40_000))
     for (i in 1 .. 50_000) {
-        treap.delete(i)
+        treap.remove(i)
     }
     println(treap.size)
-    println (treap.find(40_000))
+    println (treap.contains(40_000))
     for (i in 50_000 downTo 1) {
-        treap.insert(i)
+        treap.add(i)
     }
     println(treap.size)
-    println (treap.find(40_000))
+    println (treap.contains(40_000))
 
     treap.clear()
     println(treap.size)
-    println (treap.find(40_000))
+    println (treap.contains(40_000))
 }
 
 fun testDelete() {
     val treap = TreapSet<Int>()
 
     for (i in 1 .. 10) {
-        treap.insert(i)
+        treap.add(i)
     }
 
-    treap.delete(5)
-    treap.delete(5)
-    treap.delete(1)
-    treap.delete(0)
-    treap.delete(5)
+    treap.remove(5)
+    treap.remove(5)
+    treap.remove(1)
+    treap.remove(0)
+    treap.remove(5)
     println(treap.size)
 
     treap.print()
@@ -58,9 +58,9 @@ fun testDelete() {
 fun testUnion() {
     val treap = TreapSet<Int>()
 
-    treap.insert(-5)
-    treap.insert(0)
-    treap.insert(7)
+    treap.add(-5)
+    treap.add(0)
+    treap.add(7)
 
     treap.union(setOf(-7, 0, 5)).print()
 }
@@ -68,9 +68,9 @@ fun testUnion() {
 fun testIntersection() {
     val treap = TreapSet<Int>()
 
-    treap.insert(-5)
-    treap.insert(0)
-    treap.insert(7)
+    treap.add(-5)
+    treap.add(0)
+    treap.add(7)
 
     treap.intersect(setOf(-7, 0, 5)).print()
 }
@@ -79,10 +79,10 @@ fun testMinMax() {
     val treap = TreapSet<Int>()
 
     println ("${treap.minOrNull()}, ${treap.maxOrNull()}")
-    treap.insert(0)
+    treap.add(0)
     println ("${treap.minOrNull()}, ${treap.maxOrNull()}")
-    treap.insert(-10_000)
-    treap.insert(5000)
+    treap.add(-10_000)
+    treap.add(5000)
     println ("${treap.minOrNull()}, ${treap.maxOrNull()}")
 }
 
@@ -90,28 +90,28 @@ fun testSubTreap() {
     val treap = TreapSet<Int>()
 
     for (i in -100 .. 100) {
-        treap.insert(i)
+        treap.add(i)
     }
     treap.print()
     println(treap.size)
 
-    val subTreap = treap.subTreap(-10, 10)
+    val subTreap = treap.subSet(-10, 10)
     subTreap.print()
     println(subTreap.size)
 
     try {
-        subTreap.delete(-100)
+        subTreap.remove(-100)
     } catch(e: Exception) {
         println(e.message)
     }
     for (i in -10 .. 0) {
-        subTreap.delete(i)
+        subTreap.remove(i)
     }
     println(treap.size)
     println(subTreap.size)
 
     for (i in 5 .. 50) {
-        treap.delete(i)
+        treap.remove(i)
     }
     treap.print()
     println(treap.size)
@@ -123,7 +123,7 @@ fun testIterator(isDescending: Boolean = false, fromInclusive: Int? = null, toEx
     val treap = TreapSet<Int>()
 
     for (i in 1 .. 10) {
-        treap.insert(i)
+        treap.add(i)
     }
     treap.print()
 

@@ -72,7 +72,7 @@ fun buildMyEngine(entity: Rect): ParticleEngine {
 
     return ParticleEngine(
         initialState = entities,
-        maxCapacity = 1000,
+        maxCapacity = 500,
         edgeCollisions = true,
         particleCollisions = true,
         overflowPolicy = OverflowPolicy.DO_NOT_CREATE,

@@ -6,19 +6,30 @@ import kotlin.random.Random
  * A BST with priorities obeying the max heap property
  * Duplicate values are not allowed
  */
-open class TreapSet<T: Comparable<T>>(
-    override val comparator: Comparator<T> = compareBy { it }
+open class TreapSet<T>(
+    override val comparator: Comparator<in T> = compareBy { it.hashCode() }
 ): Treap<T> {
-    constructor(treap: Treap<T>): this(treap.comparator) {
-        val iter = treap.iterator()
+    fun copy(): TreapSet<T> {
+        val treap = TreapSet(comparator)
+        val iterator = iterator()
 
-        while (iter.hasNext()) {
-            insert(iter.next())
+        while (iterator.hasNext()) {
+            treap.add(iterator.next())
         }
+
+        return treap
     }
 
     private fun addUpdateListener(listener: UpdateListener<T>) {
         updateListeners.add(listener)
+    }
+
+    override fun headSet(toExclusive: T): Treap<T> {
+        return subSet(null, toExclusive)
+    }
+
+    override fun tailSet(fromInclusive: T): Treap<T> {
+        return subSet(fromInclusive, null)
     }
 
     /**
@@ -26,8 +37,8 @@ open class TreapSet<T: Comparable<T>>(
      * subtreap size is lazy loaded for perf
      * Returns a subtree backed by this one
      */
-    override fun subTreap(fromInclusive: T?, toExclusive: T?): Treap<T> {
-        if (comparator.compare(fromInclusive, toExclusive) > 0)
+    override fun subSet(fromInclusive: T?, toExclusive: T?): Treap<T> {
+        if (fromInclusive != null && toExclusive != null && comparator.compare(fromInclusive, toExclusive) > 0)
             throw IllegalArgumentException("Invalid range")
         val subTreap = DelegateTreap(this, fromInclusive, toExclusive)
 
@@ -67,12 +78,70 @@ open class TreapSet<T: Comparable<T>>(
         }
     }
 
+    override fun first(): T {
+        minOrNull()?.let {
+            return it
+        }
+        throw NoSuchElementException()
+    }
+
+    override fun last(): T {
+        maxOrNull()?.let {
+            return it
+        }
+        throw NoSuchElementException()
+    }
+
+    override fun removeAll(elements: Collection<T>): Boolean {
+        val oldSize = size
+        val set = elements.toSet()
+        val iterator = iterator()
+
+        while (iterator.hasNext()) {
+            val element = iterator.next()
+            if (element in set) {
+                iterator.remove()
+            }
+        }
+
+        return size != oldSize
+    }
+
+    override fun retainAll(elements: Collection<T>): Boolean {
+        val oldSize = size
+        val set = elements.toSet()
+        val iterator = iterator()
+
+        while (iterator.hasNext()) {
+            val element = iterator.next()
+            if (element !in set) {
+                iterator.remove()
+            }
+        }
+
+        return size != oldSize
+    }
+
     override fun iterator(): MutableIterator<T> {
         return Iterator()
     }
 
     override fun iteratorDescending(): MutableIterator<T> {
         return Iterator(isDescending = true)
+    }
+
+    override fun addAll(elements: Collection<T>): Boolean {
+        var result = false
+
+        for (element in elements) {
+            result = result or add(element)
+        }
+
+        return result
+    }
+
+    override fun isEmpty(): Boolean {
+       return size == 0
     }
 
     // TODO add ability to split treap into 2
@@ -82,11 +151,11 @@ open class TreapSet<T: Comparable<T>>(
 //        return SplitResult(root?.left, root, root?.right)
 //    }
 
-    override fun union(elements: Collection<T>): TreapSet<T> {
-        val treap = TreapSet(this)
+    override fun union(elements: Collection<T>): Treap<T> {
+        val treap = copy()
 
         for (element in elements) {
-            treap.insert(element)
+            treap.add(element)
         }
 
         return treap
@@ -96,12 +165,16 @@ open class TreapSet<T: Comparable<T>>(
      * Finds the interesction of this treap and elements
      * returns the interesction as a new treap
      */
-    override fun intersect(elements: Collection<T>): TreapSet<T> {
+    override fun intersect(elements: Collection<T>): Treap<T> {
         val treap = TreapSet(comparator)
 
-        for (element in elements) {
-            if (find(element)) {
-                treap.insert(element)
+        val set = elements.toSet()
+        val iterator = iterator()
+
+        while (iterator.hasNext()) {
+            val v = iterator.next()
+            if (v in set) {
+                treap.add(v)
             }
         }
 
@@ -121,81 +194,80 @@ open class TreapSet<T: Comparable<T>>(
         }
     }
 
-    override fun delete(value: T): Boolean {
-        val (parent, node) = search(root, value)
+    override fun remove(element: T): Boolean {
+        val (parent, node) = search(root, element)
 
         // Value not found
         if (node == null) return false
 
         // Two children
         var prev = parent
-        var ptr: Node<T> = node
-        while (ptr.left != null && ptr.right != null) {
-            if (ptr.left!!.priority > ptr.right!!.priority) {
+        while (node.left != null && node.right != null) {
+            if (node.left!!.priority > node.right!!.priority) {
                 if (prev == null) {
-                    root = rotateRight(ptr)
+                    root = rotateRight(node)
                     prev = root
                 } else {
-                    if (comparator.compare(ptr.value, prev.value) < 0) {
-                        prev.left = rotateRight(ptr)
+                    if (comparator.compare(node.value, prev.value) < 0) {
+                        prev.left = rotateRight(node)
                         prev = prev.left
                     } else {
-                        prev.right = rotateRight(ptr)
+                        prev.right = rotateRight(node)
                         prev = prev.right
                     }
                 }
             } else {
                 if (prev == null) {
-                    root = rotateLeft(ptr)
+                    root = rotateLeft(node)
                     prev = root
                 } else {
-                    if (comparator.compare(ptr.value, prev.value) < 0) {
-                        prev.left = rotateLeft(ptr)
+                    if (comparator.compare(node.value, prev.value) < 0) {
+                        prev.left = rotateLeft(node)
                         prev = prev.left
                     } else {
-                        prev.right = rotateLeft(ptr)
+                        prev.right = rotateLeft(node)
                         prev = prev.right
                     }
                 }
             }
         }
 
-        if (ptr.left == null && ptr.right == null) {
+        if (node.left == null && node.right == null) {
             // Leaf node
-            deleteLeafNode(prev, ptr)
-        } else if (ptr.right == null) {
+            deleteLeafNode(prev, node)
+        } else if (node.right == null) {
             // Only left child
             if (prev == null) {
-                root = ptr.left
-            } else if (comparator.compare(ptr.value, prev.value) < 0) {
-                prev.left = ptr.left
+                root = node.left
+            } else if (comparator.compare(node.value, prev.value) < 0) {
+                prev.left = node.left
             } else {
-                prev.right = ptr.left
+                prev.right = node.left
             }
         } else {
             // Only right child
             if (prev == null) {
-                root = ptr.right
-            } else if (comparator.compare(ptr.value, prev.value) < 0) {
-                prev.left = ptr.right
+                root = node.right
+            } else if (comparator.compare(node.value, prev.value) < 0) {
+                prev.left = node.right
             } else {
-                prev.right = ptr.right
+                prev.right = node.right
             }
         }
 
         count--
 
         for (listener in updateListeners) {
-            listener.onDelete(value)
+            listener.onDelete(element)
         }
 
         return true
     }
 
-    override fun insert(value: T): Boolean {
-        if (!insertNewValue(value)) {
-            if (delete(value)) {
-                return insertNewValue(value)
+    override fun add(element: T): Boolean {
+        if (!insertNewValue(element)) {
+            if (remove(element)) {
+                return insertNewValue(element)
             }
             return false
         }
@@ -258,8 +330,8 @@ open class TreapSet<T: Comparable<T>>(
         return true
     }
 
-    override fun find(value: T): Boolean {
-        return search(root, value).second != null
+    override fun contains(element: T): Boolean {
+        return search(root, element).second != null
     }
 
     /**
@@ -333,18 +405,25 @@ open class TreapSet<T: Comparable<T>>(
     override val size: Int
         get() = count
 
+    override fun containsAll(elements: Collection<T>): Boolean {
+        for (element in elements) {
+            if (!contains(element)) return false
+        }
+        return true
+    }
+
     private var updateListeners = mutableListOf<UpdateListener<T>>()
     private var count: Int = 0
     private var root: Node<T>? = null
 
     companion object {
-        fun <T : Comparable<T>> from(
+        fun <T> from(
             elements: Collection<T>,
-            comparator: Comparator<T> = compareBy { it }
+            comparator: Comparator<T> = compareBy { it.hashCode() }
         ): Treap<T> {
             return TreapSet(comparator).apply {
                 for (element in elements) {
-                    insert(element)
+                    add(element)
                 }
             }
         }
@@ -408,7 +487,7 @@ open class TreapSet<T: Comparable<T>>(
 
         override fun remove() {
             current?.let {
-                delete(it.value)
+                remove(it.value)
             }
         }
 

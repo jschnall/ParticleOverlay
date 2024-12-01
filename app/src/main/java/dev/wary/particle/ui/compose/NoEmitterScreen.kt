@@ -41,15 +41,15 @@ fun NoEmitterScreen(modifier: Modifier = Modifier) {
         entities.add(
             Particle(
                 position = Point(
-                    Random.nextInt(200).toDouble(),
-                    Random.nextInt(200).toDouble()
+                    Random.nextInt(500).toDouble(),
+                    Random.nextInt(500).toDouble()
                 ),
                 velocity = Point(
                     Random.nextDouble(),
                     Random.nextDouble()
                 ),
-                width = 16.0,
-                height = 16.0,
+                width = 32.0,
+                height = 32.0,
                 lifeSpan = Random.nextLong(3000, 10_000),
                 color = colorListParam.value,
             )
@@ -60,7 +60,7 @@ fun NoEmitterScreen(modifier: Modifier = Modifier) {
         initialState = entities,
         maxCapacity = 1000,
         edgeCollisions = true,
-        particleCollisions = false,
+        particleCollisions = true,
         overflowPolicy = OverflowPolicy.DO_NOT_CREATE,
     )
 
@@ -76,7 +76,7 @@ fun NoEmitterScreen(modifier: Modifier = Modifier) {
         ParticleOverlay(modifier = Modifier.fillMaxSize(), engineState)
 
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            Greeting(name = "No Emitter", modifier = modifier.align(Alignment.Center))
+            //Greeting(name = "No Emitter", modifier = modifier.align(Alignment.Center))
         }
     }
 }

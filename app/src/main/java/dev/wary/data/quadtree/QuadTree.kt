@@ -1,7 +1,8 @@
 package dev.wary.data.quadtree
 
+import dev.wary.data.treap.SortedSet
 import dev.wary.geo.Polygon
-import java.util.SortedSet
+import dev.wary.data.treap.sortedSetOf
 
 // TODO: replace sortedSets with pure kotlin option compatible with multiplatform
 // TODO implement max depth option
@@ -47,8 +48,8 @@ class QuadTree<T>(val width: Double = 0.0, val height: Double = 0.0, val maxDept
         isVertical: Boolean = false
     ): Map<T, List<T>> {
         val result = mutableMapOf<T, MutableList<T>>()
-        val currentSetByStart = sortedSetOf(innerStartComparator)
-        val currentSetByEnd = sortedSetOf(innerEndComparator)
+        val currentSetByStart = sortedSetOf(comparator = innerStartComparator)
+        val currentSetByEnd = sortedSetOf(comparator = innerEndComparator)
         var startIndex = 0
         var endIndex = 0
 

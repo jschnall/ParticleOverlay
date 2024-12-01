@@ -18,11 +18,11 @@ class ComposeActivity : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
-                // NoEmitterScreen()
+                //NoEmitterScreen()
                 // PointEmitterScreen()
                 // LineEmitterScreen()
                 // ParticleEmitterScreen()
-                CollisionScreen()
+                 CollisionScreen()
             }
         }
     }
