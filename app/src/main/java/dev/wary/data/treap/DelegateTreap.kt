@@ -6,12 +6,12 @@ class DelegateTreap<T> internal constructor(
     private val toExclusive: T?
 ): Treap<T>, TreapSet.UpdateListener<T> {
     override fun subSet(fromInclusive: T?, toExclusive: T?): Treap<T> {
-        if (comparator.compare(fromInclusive, toExclusive) > 0 ||
-            (this.fromInclusive != null && comparator.compare(
+        if ((fromInclusive != null && toExclusive != null && comparator.compare(fromInclusive, toExclusive) > 0) ||
+            (fromInclusive != null && this.fromInclusive != null && comparator.compare(
                 fromInclusive,
                 this.fromInclusive
             ) < 0) ||
-            (this.toExclusive != null && comparator.compare(this.toExclusive, toExclusive) > 0)
+            (toExclusive != null && this.toExclusive != null && comparator.compare(this.toExclusive, toExclusive) > 0)
         ) {
             throw IllegalArgumentException("Invalid range")
         }
@@ -24,14 +24,14 @@ class DelegateTreap<T> internal constructor(
     }
 
     override fun minOrNull(floor: T?): T? {
-        if (comparator.compare(floor, fromInclusive) >= 0) {
+        if (floor != null && fromInclusive != null && comparator.compare(floor, fromInclusive) >= 0) {
             return treap.minOrNull(floor)
         }
         return treap.minOrNull(fromInclusive)
     }
 
     override fun maxOrNull(ceil: T?): T? {
-        if (comparator.compare(ceil, fromInclusive) < 0) {
+        if (ceil != null && fromInclusive != null && comparator.compare(ceil, fromInclusive) < 0) {
             return treap.maxOrNull(ceil)
         }
         return treap.maxOrNull(toExclusive)
@@ -57,8 +57,10 @@ class DelegateTreap<T> internal constructor(
 
     override fun removeAll(elements: Collection<T>): Boolean {
         for (element in elements) {
-            if (comparator.compare(element, fromInclusive) < 0 || comparator.compare(element, toExclusive) >= 0)
+            if ((fromInclusive != null && comparator.compare(element, fromInclusive) < 0) ||
+                (toExclusive != null && comparator.compare(element, toExclusive) >= 0)) {
                 throw UnsupportedOperationException("Cannot delete outside range.")
+            }
         }
         return treap.removeAll(elements)
     }
@@ -96,8 +98,10 @@ class DelegateTreap<T> internal constructor(
 
     override fun addAll(elements: Collection<T>): Boolean {
         for (element in elements) {
-            if (comparator.compare(element, fromInclusive) < 0 || comparator.compare(element, toExclusive) >= 0)
-                throw UnsupportedOperationException("Cannot add outside range.")
+            if ((fromInclusive != null && comparator.compare(element, fromInclusive) < 0) ||
+                (toExclusive != null && comparator.compare(element, toExclusive) >= 0)) {
+                throw UnsupportedOperationException("Cannot delete outside range.")
+            }
         }
         return treap.addAll(elements)
     }
@@ -120,9 +124,9 @@ class DelegateTreap<T> internal constructor(
     override fun intersect(elements: Collection<T>): Treap<T> {
         val result = TreapSet<T>()
 
-        val iter = iterator()
-        while (iter.hasNext()) {
-            result.add(iter.next())
+        val iterator = iterator()
+        while (iterator.hasNext()) {
+            result.add(iterator.next())
         }
 
         for (element in elements) {
@@ -134,24 +138,24 @@ class DelegateTreap<T> internal constructor(
         return result
     }
 
-    override fun remove(value: T): Boolean {
-        if ((fromInclusive != null && comparator.compare(value, fromInclusive) < 0) ||
-            (toExclusive != null && comparator.compare(value, toExclusive) >= 0)) {
+    override fun remove(element: T): Boolean {
+        if ((fromInclusive != null && comparator.compare(element, fromInclusive) < 0) ||
+            (toExclusive != null && comparator.compare(element, toExclusive) >= 0)) {
             throw IllegalArgumentException("Cannot delete outside range.")
         }
-        if (treap.remove(value)) {
+        if (treap.remove(element)) {
             if (count >= 0) count--
             return true
         }
         return false
     }
 
-    override fun add(value: T): Boolean {
-        if ((fromInclusive != null && comparator.compare(value, fromInclusive) < 0) ||
-            (toExclusive != null && comparator.compare(value, toExclusive) >= 0)) {
+    override fun add(element: T): Boolean {
+        if ((fromInclusive != null && comparator.compare(element, fromInclusive) < 0) ||
+            (toExclusive != null && comparator.compare(element, toExclusive) >= 0)) {
             throw IllegalArgumentException("Cannot insert outside range.")
         }
-        if (treap.add(value)) {
+        if (treap.add(element)) {
             if (count >= 0) count++
             return true
         }

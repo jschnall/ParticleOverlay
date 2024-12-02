@@ -20,3 +20,7 @@ interface SortedMap<K, V> {
     fun putAll(from: Map<out K, V>)
     fun put(key: K, value: V?): V?
 }
+
+//fun <K, V> sortedMapOf(comparator: Comparator<in K> = compareBy { it.hashCode() }): SortedMap<K, V> {
+//    return TreapMap(comparator)
+//}

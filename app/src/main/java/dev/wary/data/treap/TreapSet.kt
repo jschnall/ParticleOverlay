@@ -304,7 +304,7 @@ open class TreapSet<T>(
         while(stack.isNotEmpty()) {
             val node = stack.removeFirst()!!
 
-            if (comparator.compare(prev?.value, node.value) < 0) {
+            if (comparator.compare(prev!!.value, node.value) < 0) {
                 node.left = prev
                 if (node.left!!.priority > node.priority) {
                     prev = rotateRight(node)
@@ -435,25 +435,25 @@ open class TreapSet<T>(
         private val toExclusive: T? = null
     ): MutableIterator<T> {
         private val stack = ArrayDeque<Node<T>>()
-        var current: Node<T>? = null
-        var next: Node<T>? = null
+        private var currentNode: Node<T>? = null
+        private var nextNode: Node<T>? = null
 
         init {
             if (isDescending) pushAllRight(root) else pushAllLeft(root)
-            next = nextValidNode()
+            nextNode = nextValidNode()
         }
 
         override fun hasNext(): Boolean {
-            return next != null
+            return nextNode != null
         }
 
         override fun next(): T {
-            if (next == null) throw NoSuchElementException()
+            if (nextNode == null) throw NoSuchElementException()
 
-            current = next
-            next = nextValidNode()
+            currentNode = nextNode
+            nextNode = nextValidNode()
 
-            return current!!.value
+            return currentNode!!.value
         }
 
         private fun nextValidNode(): Node<T>? {
@@ -486,7 +486,7 @@ open class TreapSet<T>(
         }
 
         override fun remove() {
-            current?.let {
+            currentNode?.let {
                 remove(it.value)
             }
         }

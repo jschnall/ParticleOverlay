@@ -80,7 +80,7 @@ class ParticleEngine(
     fun update(currentTime: Long) {
         val elapsedTime = if (lastUpdateTime == 0L) 1 else currentTime - lastUpdateTime
         lastUpdateTime = currentTime
-
+        val totalEntities = 0
         val createdEntities = mutableMapOf<Rect, Polygon?>()
         val updatedEntities = mutableMapOf<Rect, Polygon?>()
 
@@ -118,6 +118,8 @@ class ParticleEngine(
                 if (particleCollisions && entity is Particle) {
                     quadTree.add(polygon!!, entity)
                 }
+            } else {
+                break
             }
         }
         for (entry in createdEntities) {
@@ -129,6 +131,8 @@ class ParticleEngine(
                 if (particleCollisions && entity is Particle) {
                     quadTree.add(Polygon(entity.toPoints()), entity)
                 }
+            } else {
+                break
             }
         }
 
@@ -284,6 +288,6 @@ class ParticleEngine(
 
     companion object {
         const val DEBUG = true
-        const val DRAW_COLLISION_BOUNDS = false
+        const val DRAW_COLLISION_BOUNDS = true
     }
 }

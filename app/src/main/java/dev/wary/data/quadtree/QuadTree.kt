@@ -1,10 +1,10 @@
 package dev.wary.data.quadtree
 
-import dev.wary.data.treap.SortedSet
+//import dev.wary.data.treap.SortedSet
+//import dev.wary.data.treap.sortedSetOf
 import dev.wary.geo.Polygon
-import dev.wary.data.treap.sortedSetOf
+import java.util.SortedSet
 
-// TODO: replace sortedSets with pure kotlin option compatible with multiplatform
 // TODO implement max depth option
 class QuadTree<T>(val width: Double = 0.0, val height: Double = 0.0, val maxDepth: Int = -1) {
     private val root: Node<T> = Node(0.0,0.0, width, height)

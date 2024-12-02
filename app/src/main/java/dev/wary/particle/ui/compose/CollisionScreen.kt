@@ -47,7 +47,7 @@ fun CollisionScreen(modifier: Modifier = Modifier) {
 fun buildPointEmitter(): PointEmitter {
     val builder = RangedParticleBuilder(
         ParticleParams(
-            lifeSpan = LongRangeParam(1_000, 25_000),
+            lifeSpan = LongRangeParam(1_000, 30_000),
             width = ExactParam(8.0),
             height = ExactParam(8.0),
             vx = DoubleRangeParam(0.2, 0.4),
@@ -62,7 +62,7 @@ fun buildPointEmitter(): PointEmitter {
             onParticleCollision = ExactParam({ particle, other -> particle.color.blue = 255.0  })
         )
     )
-    return PointEmitter(Point(0.0, 0.0), builder, emitRate = 0.1)
+    return PointEmitter(Point(0.0, 0.0), builder, emitRate = 0.04)
 }
 
 fun buildMyEngine(entity: Rect): ParticleEngine {
